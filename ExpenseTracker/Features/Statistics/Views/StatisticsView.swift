@@ -70,6 +70,10 @@ struct StatisticsView: View {
             .navigationTitle("统计")
             .navigationBarTitleDisplayMode(.large)
             .background(Color(.systemGroupedBackground))
+            // 配置导航目标：点击分类统计行后导航到交易明细列表
+            .navigationDestination(for: CategoryTransactionParams.self) { params in
+                CategoryTransactionListView(params: params)
+            }
         }
         .onAppear {
             loadPeriodOptions()
@@ -114,7 +118,12 @@ struct StatisticsView: View {
             } else {
                 VStack(spacing: 1) {
                     ForEach(categories) { categoryStats in
-                        CategoryStatisticsRow(categoryStats: categoryStats)
+                        // 使用NavigationLink包装分类统计行，支持点击导航到明细
+                        NavigationLink(value: createNavigationParams(for: categoryStats)) {
+                            CategoryStatisticsRow(categoryStats: categoryStats)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
                         if categoryStats.id != categories.last?.id {
                             Divider()
                                 .padding(.leading, 68)
@@ -168,6 +177,26 @@ struct StatisticsView: View {
         }
 
         statistics = StatisticsService.calculateStatistics(for: option, modelContext: modelContext)
+    }
+
+    /// 创建导航参数
+    /// 作者: xiaolei
+    /// 将分类统计数据转换为导航参数，用于跳转到交易明细列表
+    private func createNavigationParams(for categoryStats: CategoryStatistics) -> CategoryTransactionParams {
+        guard let selectedOption = selectedOption else {
+            fatalError("selectedOption不能为空")
+        }
+
+        return CategoryTransactionParams(
+            categoryId: categoryStats.categoryId,
+            categoryName: categoryStats.categoryName,
+            categoryIcon: categoryStats.categoryIcon,
+            categoryColor: categoryStats.categoryColor,
+            startDate: selectedOption.startDate,
+            endDate: selectedOption.endDate,
+            transactionType: selectedTransactionType,
+            periodDisplayName: selectedOption.displayName
+        )
     }
 }
 
