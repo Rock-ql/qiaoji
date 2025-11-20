@@ -111,9 +111,9 @@ struct CategoryTransactionListView: View {
                 HStack(spacing: 12) {
                     Image(systemName: params.categoryIcon)
                         .font(.system(size: 32))
-                        .foregroundColor(Color(hex: params.categoryColor))
+                        .foregroundColor(Color(hex: params.categoryColor) ?? .gray)
                         .frame(width: 56, height: 56)
-                        .background(Color(hex: params.categoryColor).opacity(0.1))
+                        .background((Color(hex: params.categoryColor) ?? .gray).opacity(0.1))
                         .clipShape(Circle())
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -227,9 +227,9 @@ private struct TransactionRowView: View {
             if let category = transaction.category {
                 Image(systemName: category.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(Color(hex: category.color))
+                    .foregroundColor(Color(hex: category.color) ?? .gray)
                     .frame(width: 40, height: 40)
-                    .background(Color(hex: category.color).opacity(0.1))
+                    .background((Color(hex: category.color) ?? .gray).opacity(0.1))
                     .clipShape(Circle())
             } else {
                 Image(systemName: "questionmark")
@@ -269,36 +269,6 @@ private struct TransactionRowView: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - 颜色扩展
-
-extension Color {
-    /// 从十六进制字符串创建颜色
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }
 
