@@ -52,6 +52,12 @@ struct CategoryTransactionListView: View {
         let endDate = params.endDate
         let type = params.transactionType
 
+        // 调试信息：打印查询参数
+        print("📊 CategoryTransactionListView 查询参数:")
+        print("  - 分类: \(params.categoryName) (ID: \(categoryId?.uuidString ?? "nil"))")
+        print("  - 时间范围: \(startDate) 到 \(endDate)")
+        print("  - 交易类型: \(type)")
+
         // 根据是否有分类ID，构建不同的Predicate（避免三元运算符在Predicate中的问题）
         let predicate: Predicate<Transaction>
         if let categoryId = categoryId {
@@ -86,6 +92,16 @@ struct CategoryTransactionListView: View {
                 emptyStateSection
             } else {
                 transactionListSection
+            }
+        }
+        .onAppear {
+            // 调试信息：打印查询结果
+            print("📊 查询到的交易数量: \(transactions.count)")
+            if !transactions.isEmpty {
+                print("📊 交易详情:")
+                for (index, transaction) in transactions.prefix(5).enumerated() {
+                    print("  [\(index + 1)] \(transaction.amount) - \(transaction.category?.name ?? "无分类") - \(transaction.date)")
+                }
             }
         }
         .navigationTitle("\(params.categoryName)")
