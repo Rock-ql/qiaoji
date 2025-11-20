@@ -32,8 +32,8 @@ struct CategoryTransactionListView: View {
     /// SwiftData环境
     @Environment(\.modelContext) private var modelContext
 
-    /// 查询该分类的所有交易（使用SwiftData的@Query自动筛选）
-    @Query private var transactions: [Transaction]
+    /// 存储查询到的交易（手动筛选）
+    @State private var transactions: [Transaction] = []
 
     /// 选中的交易（用于弹出编辑页面）
     @State private var selectedTransaction: Transaction?
@@ -45,43 +45,47 @@ struct CategoryTransactionListView: View {
     /// - Parameter params: 分类和时间段参数
     init(params: CategoryTransactionParams) {
         self.params = params
+    }
 
-        // 配置SwiftData查询：筛选指定分类、时间段、类型的交易，按日期倒序
+    /// 手动获取交易数据
+    /// 由于SwiftData Predicate不支持枚举类型比较，我们在Predicate中只筛选分类和时间，然后在Swift代码中筛选类型
+    private func fetchTransactions() {
         let categoryId = params.categoryId
         let startDate = params.startDate
         let endDate = params.endDate
         let type = params.transactionType
 
-        // 调试信息：打印查询参数
-        print("📊 CategoryTransactionListView 查询参数:")
-        print("  - 分类: \(params.categoryName) (ID: \(categoryId?.uuidString ?? "nil"))")
-        print("  - 时间范围: \(startDate) 到 \(endDate)")
-        print("  - 交易类型: \(type)")
-
-        // 根据是否有分类ID，构建不同的Predicate（避免三元运算符在Predicate中的问题）
-        // 注意：SwiftData Predicate 不支持枚举类型直接比较，需要使用 rawValue
-        let typeRawValue = type.rawValue
+        // 构建Predicate：只筛选分类和时间段，不筛选类型
         let predicate: Predicate<Transaction>
         if let categoryId = categoryId {
             // 有分类ID：匹配指定分类的交易
             predicate = #Predicate<Transaction> { transaction in
                 transaction.category?.id == categoryId &&
-                transaction.date >= startDate && transaction.date < endDate &&
-                transaction.type.rawValue == typeRawValue
+                transaction.date >= startDate && transaction.date < endDate
             }
         } else {
             // 无分类ID：匹配未分类的交易
             predicate = #Predicate<Transaction> { transaction in
                 transaction.category == nil &&
-                transaction.date >= startDate && transaction.date < endDate &&
-                transaction.type.rawValue == typeRawValue
+                transaction.date >= startDate && transaction.date < endDate
             }
         }
 
-        _transactions = Query(
-            filter: predicate,
-            sort: [SortDescriptor(\.date, order: .reverse)]
+        // 创建FetchDescriptor
+        let descriptor = FetchDescriptor<Transaction>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
+
+        // 执行查询并在Swift代码中筛选类型
+        do {
+            let results = try modelContext.fetch(descriptor)
+            // 在Swift代码中筛选交易类型（避免Predicate的枚举限制）
+            transactions = results.filter { $0.type == type }
+        } catch {
+            print("❌ 查询交易失败: \(error)")
+            transactions = []
+        }
     }
 
     var body: some View {
@@ -97,14 +101,8 @@ struct CategoryTransactionListView: View {
             }
         }
         .onAppear {
-            // 调试信息：打印查询结果
-            print("📊 查询到的交易数量: \(transactions.count)")
-            if !transactions.isEmpty {
-                print("📊 交易详情:")
-                for (index, transaction) in transactions.prefix(5).enumerated() {
-                    print("  [\(index + 1)] \(transaction.amount) - \(transaction.category?.name ?? "无分类") - \(transaction.date)")
-                }
-            }
+            // 获取交易数据
+            fetchTransactions()
         }
         .navigationTitle("\(params.categoryName)")
         .navigationBarTitleDisplayMode(.inline)
