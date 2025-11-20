@@ -28,6 +28,9 @@ struct StatisticsView: View {
     // 当前显示的交易类型（收入/支出）
     @State private var selectedTransactionType: TransactionType = .expense
 
+    // 监听所有交易数据的变化，用于触发统计自动刷新
+    @Query private var allTransactions: [Transaction]
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -83,6 +86,13 @@ struct StatisticsView: View {
         }
         .onChange(of: selectedOption) { oldValue, newValue in
             if newValue != nil {
+                calculateStatistics()
+            }
+        }
+        // 监听交易数据变化，当添加/删除/编辑交易后自动刷新统计
+        .onChange(of: allTransactions.count) { oldValue, newValue in
+            // 当交易数量发生变化时，重新计算统计数据
+            if selectedOption != nil {
                 calculateStatistics()
             }
         }

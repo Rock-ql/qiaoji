@@ -52,13 +52,22 @@ struct CategoryTransactionListView: View {
         let endDate = params.endDate
         let type = params.transactionType
 
-        let predicate = #Predicate<Transaction> { transaction in
-            // 分类匹配（注意处理未分类的情况）
-            (categoryId == nil ? transaction.category == nil : transaction.category?.id == categoryId) &&
-            // 日期在范围内
-            transaction.date >= startDate && transaction.date < endDate &&
-            // 类型匹配
-            transaction.type == type
+        // 根据是否有分类ID，构建不同的Predicate（避免三元运算符在Predicate中的问题）
+        let predicate: Predicate<Transaction>
+        if let categoryId = categoryId {
+            // 有分类ID：匹配指定分类的交易
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.category?.id == categoryId &&
+                transaction.date >= startDate && transaction.date < endDate &&
+                transaction.type == type
+            }
+        } else {
+            // 无分类ID：匹配未分类的交易
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.category == nil &&
+                transaction.date >= startDate && transaction.date < endDate &&
+                transaction.type == type
+            }
         }
 
         _transactions = Query(
