@@ -32,7 +32,8 @@ struct PeriodSelectorView: View {
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
-                            ForEach(periodOptions) { option in
+                            // 反转顺序：从左到右按旧到新排列
+                            ForEach(periodOptions.reversed()) { option in
                                 PeriodCapsule(
                                     option: option,
                                     isSelected: selectedOption?.id == option.id
