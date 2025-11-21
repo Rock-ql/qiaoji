@@ -19,7 +19,7 @@ struct CategoryStatisticsRow: View {
             // 分类图标
             ZStack {
                 Circle()
-                    .fill(categoryStats.color.opacity(0.2))
+                    .fill(categoryStats.color.opacity(0.15))
                     .frame(width: 44, height: 44)
 
                 Image(systemName: categoryStats.categoryIcon)
@@ -27,36 +27,46 @@ struct CategoryStatisticsRow: View {
                     .foregroundColor(categoryStats.color)
             }
 
-            // 分类名称和笔数
-            VStack(alignment: .leading, spacing: 4) {
-                Text(categoryStats.categoryName)
-                    .font(.body)
-                    .fontWeight(.medium)
+            VStack(alignment: .leading, spacing: 8) {
+                // 标题行：名称 + 笔数 + 金额 + 箭头
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(categoryStats.categoryName)
+                            .font(.body)
+                            .fontWeight(.medium)
 
-                Text("\(categoryStats.transactionCount)笔")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                        Text("\(categoryStats.transactionCount)笔")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Text(categoryStats.formattedAmount)
+                        .font(.body)
+                        .fontWeight(.semibold)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // 占比线条
+                HStack(spacing: 8) {
+                    ProgressView(value: categoryStats.percentage)
+                        .progressViewStyle(.linear)
+                        .tint(categoryStats.color)
+                        .frame(height: 6)
+                        .animation(.easeInOut(duration: 0.25), value: categoryStats.percentage)
+
+                    Text(categoryStats.formattedPercentage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 48, alignment: .trailing)
+                }
             }
-
-            Spacer()
-
-            // 金额和占比
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(categoryStats.formattedAmount)
-                    .font(.body)
-                    .fontWeight(.semibold)
-
-                Text(categoryStats.formattedPercentage)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            // 箭头图标
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .padding(.horizontal)
         .background(Color(.systemBackground))
     }

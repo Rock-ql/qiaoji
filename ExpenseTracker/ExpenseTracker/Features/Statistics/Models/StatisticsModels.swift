@@ -125,6 +125,30 @@ struct PeriodStatistics {
     var hasData: Bool {
         totalCount > 0
     }
+
+    /// 已经过的天数（包含起始日，结束日不超过当前时间）
+    /// 作者: xiaolei
+    var elapsedDays: Int {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: period.startDate)
+        // 结束日取当前时间与周期结束前一天的最小值；周期endDate为开区间，需要减1天避免额外一天
+        let logicalEnd = calendar.startOfDay(for: min(period.endDate.addingTimeInterval(-86400), Date()))
+        let days = calendar.dateComponents([.day], from: start, to: logicalEnd).day ?? 0
+        return max(1, days + 1) // 包含起始日，避免除零
+    }
+
+    /// 平均每日支出
+    /// 作者: xiaolei
+    var expenseDailyAverage: Double {
+        guard totalExpense > 0 else { return 0 }
+        return totalExpense / Double(elapsedDays)
+    }
+
+    /// 格式化的平均每日支出
+    /// 作者: xiaolei
+    var formattedExpenseDailyAverage: String {
+        String(format: "¥%.2f", expenseDailyAverage)
+    }
 }
 
 // MARK: - Color扩展

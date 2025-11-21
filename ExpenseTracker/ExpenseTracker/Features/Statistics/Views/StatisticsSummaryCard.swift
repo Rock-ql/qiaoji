@@ -62,6 +62,22 @@ struct StatisticsSummaryCard: View {
                         .foregroundColor(.red)
                 }
 
+                // 平均（按日）
+                HStack {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.clock")
+                            .foregroundColor(.purple)
+                        Text("平均/日")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text(statistics.formattedExpenseDailyAverage)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.purple)
+                }
+
                 Divider()
 
                 // 结余
