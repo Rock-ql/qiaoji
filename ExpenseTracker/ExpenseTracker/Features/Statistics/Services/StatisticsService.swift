@@ -235,7 +235,12 @@ class StatisticsService {
             }
 
             let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart)!
-            let monthName = monthStart.formatted(.dateTime.year().month(.wide))
+
+            // 使用 DateFormatter 确保中文格式
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "zh_CN")
+            formatter.dateFormat = "yyyy年M月"
+            let monthName = formatter.string(from: monthStart)
 
             options.append(PeriodOption(
                 id: "month_\(monthStart.timeIntervalSince1970)",
