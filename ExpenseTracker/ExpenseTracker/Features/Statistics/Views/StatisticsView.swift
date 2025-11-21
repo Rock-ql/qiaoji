@@ -28,8 +28,21 @@ struct StatisticsView: View {
     // 当前显示的交易类型（收入/支出）
     @State private var selectedTransactionType: TransactionType = .expense
 
+    // 显示模式（汇总/趋势）
+    @State private var displayMode: DisplayMode = .summary
+
+    // 趋势数据
+    @State private var trendData: [TrendDataPoint] = []
+
     // 监听所有交易数据的变化，用于触发统计自动刷新
     @Query private var allTransactions: [Transaction]
+
+    /// 显示模式枚举
+    /// 作者: xiaolei
+    enum DisplayMode: String, CaseIterable {
+        case summary = "汇总"
+        case trend = "趋势"
+    }
 
     var body: some View {
         NavigationStack {
@@ -45,8 +58,23 @@ struct StatisticsView: View {
 
                     if let stats = statistics {
                         if stats.hasData {
-                            // 汇总卡片
-                            StatisticsSummaryCard(statistics: stats)
+                            // 显示模式切换（汇总/趋势）
+                            Picker("显示模式", selection: $displayMode) {
+                                ForEach(DisplayMode.allCases, id: \.self) { mode in
+                                    Text(mode.rawValue).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.horizontal)
+
+                            // 根据模式显示不同的视图
+                            if displayMode == .summary {
+                                // 汇总卡片
+                                StatisticsSummaryCard(statistics: stats)
+                            } else {
+                                // 趋势图
+                                TrendChartView(trendData: trendData, period: selectedPeriod)
+                            }
 
                             // 类型切换（收入/支出）
                             Picker("类型", selection: $selectedTransactionType) {
@@ -189,10 +217,15 @@ struct StatisticsView: View {
     private func calculateStatistics() {
         guard let option = selectedOption else {
             statistics = nil
+            trendData = []
             return
         }
 
+        // 计算汇总统计数据
         statistics = StatisticsService.calculateStatistics(for: option, modelContext: modelContext)
+
+        // 计算趋势数据
+        trendData = StatisticsService.calculateTrendData(for: option, modelContext: modelContext)
     }
 
     /// 创建导航参数

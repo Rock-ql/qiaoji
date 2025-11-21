@@ -415,4 +415,102 @@ class StatisticsService {
             expenseCategories: []
         )
     }
+
+    /// 计算指定周期的趋势数据
+    /// 作者: xiaolei
+    /// - Parameters:
+    ///   - periodOption: 周期选项
+    ///   - modelContext: SwiftData模型上下文
+    /// - Returns: 趋势数据点数组
+    static func calculateTrendData(for periodOption: PeriodOption, modelContext: ModelContext) -> [TrendDataPoint] {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 周一为起始
+
+        // 查询指定时间范围内的所有交易
+        let startDate = periodOption.startDate
+        let endDate = periodOption.endDate
+
+        let predicate = #Predicate<Transaction> { transaction in
+            transaction.date >= startDate && transaction.date < endDate
+        }
+
+        let descriptor = FetchDescriptor<Transaction>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.date)]
+        )
+
+        guard let transactions = try? modelContext.fetch(descriptor) else {
+            return []
+        }
+
+        // 根据周期类型确定分组维度
+        switch periodOption.period {
+        case .week, .month:
+            // 按天分组
+            return groupByDay(transactions: transactions, calendar: calendar, startDate: startDate, endDate: endDate)
+        case .year:
+            // 按月分组
+            return groupByMonth(transactions: transactions, calendar: calendar, startDate: startDate, endDate: endDate)
+        }
+    }
+
+    /// 按天分组交易数据
+    /// 作者: xiaolei
+    private static func groupByDay(transactions: [Transaction], calendar: Calendar, startDate: Date, endDate: Date) -> [TrendDataPoint] {
+        var dataPoints: [TrendDataPoint] = []
+
+        // 生成日期范围内的所有天
+        var currentDate = calendar.startOfDay(for: startDate)
+        let finalDate = calendar.startOfDay(for: endDate)
+
+        while currentDate < finalDate {
+            let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+
+            // 筛选当天的交易
+            let dayTransactions = transactions.filter { transaction in
+                let transactionDay = calendar.startOfDay(for: transaction.date)
+                return transactionDay == currentDate
+            }
+
+            // 计算当天的收入和支出
+            let income = dayTransactions.filter { $0.type == .income }.reduce(0.0) { $0 + $1.amount }
+            let expense = dayTransactions.filter { $0.type == .expense }.reduce(0.0) { $0 + $1.amount }
+
+            dataPoints.append(TrendDataPoint(date: currentDate, income: income, expense: expense))
+
+            currentDate = nextDate
+        }
+
+        return dataPoints
+    }
+
+    /// 按月分组交易数据
+    /// 作者: xiaolei
+    private static func groupByMonth(transactions: [Transaction], calendar: Calendar, startDate: Date, endDate: Date) -> [TrendDataPoint] {
+        var dataPoints: [TrendDataPoint] = []
+
+        // 生成日期范围内的所有月
+        var currentDate = calendar.dateInterval(of: .month, for: startDate)!.start
+        let finalDate = calendar.startOfDay(for: endDate)
+
+        while currentDate < finalDate {
+            let nextDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
+
+            // 筛选当月的交易
+            let monthTransactions = transactions.filter { transaction in
+                let transactionMonth = calendar.dateInterval(of: .month, for: transaction.date)!.start
+                return transactionMonth == currentDate
+            }
+
+            // 计算当月的收入和支出
+            let income = monthTransactions.filter { $0.type == .income }.reduce(0.0) { $0 + $1.amount }
+            let expense = monthTransactions.filter { $0.type == .expense }.reduce(0.0) { $0 + $1.amount }
+
+            dataPoints.append(TrendDataPoint(date: currentDate, income: income, expense: expense))
+
+            currentDate = nextDate
+        }
+
+        return dataPoints
+    }
 }

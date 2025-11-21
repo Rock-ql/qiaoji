@@ -194,3 +194,33 @@ extension Color {
         self.init(red: r, green: g, blue: b)
     }
 }
+
+// MARK: - 趋势数据点
+/// 单个时间点的趋势数据
+/// 作者: xiaolei
+struct TrendDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let income: Double
+    let expense: Double
+
+    /// 格式化的日期字符串（根据维度显示）
+    /// 作者: xiaolei
+    /// - Parameter period: 时间维度
+    /// - Returns: 格式化的日期字符串
+    func formattedDate(for period: TimePeriod) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+
+        switch period {
+        case .week, .month:
+            // 周和月：显示"M月d日"
+            formatter.dateFormat = "M月d日"
+        case .year:
+            // 年：显示"M月"
+            formatter.dateFormat = "M月"
+        }
+
+        return formatter.string(from: date)
+    }
+}
