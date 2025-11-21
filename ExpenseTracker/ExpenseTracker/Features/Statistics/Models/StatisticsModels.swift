@@ -131,10 +131,18 @@ struct PeriodStatistics {
     var elapsedDays: Int {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: period.startDate)
-        // 结束日取当前时间与周期结束前一天的最小值；周期endDate为开区间，需要减1天避免额外一天
-        let logicalEnd = calendar.startOfDay(for: min(period.endDate.addingTimeInterval(-86400), Date()))
+        let periodEndExclusive = calendar.startOfDay(for: period.endDate)
+        let todayStart = calendar.startOfDay(for: Date())
+
+        // 周期结束日为开区间，需减去1天；考虑夏令时，使用日历加减而非秒数
+        let periodEndInclusive = calendar.date(byAdding: .day, value: -1, to: periodEndExclusive) ?? periodEndExclusive
+        let logicalEnd = min(periodEndInclusive, todayStart)
+
+        // 如果周期尚未开始，至少返回1天，避免除零
+        guard logicalEnd >= start else { return 1 }
+
         let days = calendar.dateComponents([.day], from: start, to: logicalEnd).day ?? 0
-        return max(1, days + 1) // 包含起始日，避免除零
+        return max(1, days + 1) // 包含起始日
     }
 
     /// 平均每日支出
