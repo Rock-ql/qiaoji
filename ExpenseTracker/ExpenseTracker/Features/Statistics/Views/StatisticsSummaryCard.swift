@@ -97,6 +97,7 @@ struct StatisticsSummaryCard: View {
                 }
             }
         }
+        .frame(height: 220)
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)

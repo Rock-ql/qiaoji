@@ -59,7 +59,6 @@ struct TrendChartView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 16)
 
             // 折线图
             if trendData.isEmpty {
@@ -74,7 +73,7 @@ struct TrendChartView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 200)
+                .frame(height: 160)
             } else {
                 Chart {
                     // 收入折线
@@ -129,9 +128,8 @@ struct TrendChartView: View {
                         AxisGridLine()
                     }
                 }
-                .frame(height: 200)
+                .frame(height: 160)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 12)
                 .overlay(alignment: .top) {
                     // 选中提示框（使用 overlay 避免影响图表布局）
                     if let dataPoint = selectedDataPoint {
@@ -141,6 +139,7 @@ struct TrendChartView: View {
                 }
             }
         }
+        .frame(height: 220)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
