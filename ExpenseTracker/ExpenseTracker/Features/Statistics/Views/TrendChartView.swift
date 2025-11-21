@@ -15,6 +15,17 @@ struct TrendChartView: View {
     let trendData: [TrendDataPoint]
     let period: TimePeriod
 
+    /// 选中的数据点
+    /// 作者: xiaolei
+    @State private var selectedDate: Date?
+
+    /// 选中的数据点信息
+    /// 作者: xiaolei
+    private var selectedDataPoint: TrendDataPoint? {
+        guard let date = selectedDate else { return nil }
+        return trendData.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 图表标题
@@ -87,7 +98,18 @@ struct TrendChartView: View {
                         .symbol(Circle())
                         .interpolationMethod(.catmullRom)
                     }
+
+                    // 选中标记
+                    if let selectedDataPoint = selectedDataPoint {
+                        RuleMark(x: .value("选中日期", selectedDataPoint.date))
+                            .foregroundStyle(Color.blue.opacity(0.3))
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                            .annotation(position: .top, spacing: 8) {
+                                selectionAnnotation(for: selectedDataPoint)
+                            }
+                    }
                 }
+                .chartXSelection(value: $selectedDate)
                 .chartXAxis {
                     AxisMarks(values: .automatic) { value in
                         if let date = value.as(Date.self) {
@@ -155,5 +177,66 @@ struct TrendChartView: View {
         } else {
             return String(format: "%.0f", amount)
         }
+    }
+
+    /// 选中数据点的注释视图
+    /// 作者: xiaolei
+    @ViewBuilder
+    private func selectionAnnotation(for dataPoint: TrendDataPoint) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // 日期
+            Text(dataPoint.formattedDate(for: period))
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+
+            // 收入
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 6, height: 6)
+                Text("收入：")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Text(String(format: "¥%.2f", dataPoint.income))
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.green)
+            }
+
+            // 支出
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 6, height: 6)
+                Text("支出：")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Text(String(format: "¥%.2f", dataPoint.expense))
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.red)
+            }
+
+            // 结余
+            Divider()
+
+            HStack(spacing: 4) {
+                Text("结余：")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                let balance = dataPoint.income - dataPoint.expense
+                Text(String(format: "¥%.2f", balance))
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(balance >= 0 ? .blue : .orange)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        )
     }
 }
