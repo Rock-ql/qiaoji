@@ -137,6 +137,12 @@ struct CategoryTransactionListView: View {
             // 保证弹窗内也能访问同一数据容器，避免环境缺失导致空白
             .modelContainer(modelContext.container)
         }
+        // 编辑或删除后关闭弹窗时刷新列表与统计
+        .onChange(of: selectedTransaction?.id) { oldValue, newValue in
+            if oldValue != nil, newValue == nil {
+                fetchTransactions()
+            }
+        }
     }
 
     // MARK: - 视图组件

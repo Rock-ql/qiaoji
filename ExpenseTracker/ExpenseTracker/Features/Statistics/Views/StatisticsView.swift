@@ -96,6 +96,12 @@ struct StatisticsView: View {
                 calculateStatistics()
             }
         }
+        // 监听交易内容变化（金额/时间等），即使笔数不变也自动刷新
+        .onChange(of: transactionsSignature) { _, _ in
+            if selectedOption != nil {
+                calculateStatistics()
+            }
+        }
     }
 
     /// 分类统计列表视图
@@ -207,6 +213,13 @@ struct StatisticsView: View {
             transactionType: selectedTransactionType,
             periodDisplayName: selectedOption.displayName
         )
+    }
+
+    /// 交易变更签名：用于监听金额、日期等字段的变化
+    private var transactionsSignature: String {
+        allTransactions
+            .map { "\($0.id.uuidString)|\($0.amount)|\($0.date.timeIntervalSince1970)" }
+            .joined(separator: ";")
     }
 }
 
