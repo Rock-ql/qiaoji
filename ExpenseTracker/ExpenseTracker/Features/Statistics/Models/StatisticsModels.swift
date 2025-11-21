@@ -130,19 +130,36 @@ struct PeriodStatistics {
     /// 作者: xiaolei
     var elapsedDays: Int {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: period.startDate)
-        let periodEndExclusive = calendar.startOfDay(for: period.endDate)
         let todayStart = calendar.startOfDay(for: Date())
 
-        // 周期结束日为开区间，需减去1天；考虑夏令时，使用日历加减而非秒数
-        let periodEndInclusive = calendar.date(byAdding: .day, value: -1, to: periodEndExclusive) ?? periodEndExclusive
-        let logicalEnd = min(periodEndInclusive, todayStart)
+        // 针对周统计，使用 ISO 周（周一为一周开始）确保天数符合用户认知
+        if period.period == .week {
+            var isoCal = Calendar(identifier: .iso8601)
+            isoCal.firstWeekday = 2 // 周一
 
-        // 如果周期尚未开始，至少返回1天，避免除零
+            // 获取该周的起始周一
+            let comp = isoCal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: period.startDate)
+            let isoStart = isoCal.date(from: comp) ?? calendar.startOfDay(for: period.startDate)
+            // 该周的结束开区间（下周一）
+            let isoEndExclusive = isoCal.date(byAdding: .day, value: 7, to: isoStart) ?? period.endDate
+
+            let endInclusive = isoCal.date(byAdding: .day, value: -1, to: isoEndExclusive) ?? isoEndExclusive
+            let logicalEnd = min(endInclusive, todayStart)
+
+            guard logicalEnd >= isoStart else { return 1 }
+            let days = isoCal.dateComponents([.day], from: isoStart, to: logicalEnd).day ?? 0
+            return max(1, days + 1)
+        }
+
+        // 月/年沿用周期起止，但仍按开区间处理 endDate
+        let start = calendar.startOfDay(for: period.startDate)
+        let endExclusive = calendar.startOfDay(for: period.endDate)
+        let endInclusive = calendar.date(byAdding: .day, value: -1, to: endExclusive) ?? endExclusive
+        let logicalEnd = min(endInclusive, todayStart)
+
         guard logicalEnd >= start else { return 1 }
-
         let days = calendar.dateComponents([.day], from: start, to: logicalEnd).day ?? 0
-        return max(1, days + 1) // 包含起始日
+        return max(1, days + 1)
     }
 
     /// 平均每日支出
