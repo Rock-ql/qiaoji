@@ -16,25 +16,6 @@ struct PeriodSelectorView: View {
     @Binding var selectedOption: PeriodOption?
     let periodOptions: [PeriodOption]
 
-    /// 当前选中项的索引
-    /// 作者: xiaolei
-    private var currentIndex: Int {
-        guard let selected = selectedOption else { return 0 }
-        return periodOptions.firstIndex(where: { $0.id == selected.id }) ?? 0
-    }
-
-    /// 是否可以向前（更早的周期）
-    /// 作者: xiaolei
-    private var canGoBack: Bool {
-        currentIndex < periodOptions.count - 1
-    }
-
-    /// 是否可以向后（更晚的周期）
-    /// 作者: xiaolei
-    private var canGoForward: Bool {
-        currentIndex > 0
-    }
-
     var body: some View {
         VStack(spacing: 12) {
             // 时间维度选择器（周/月/年）
@@ -46,76 +27,69 @@ struct PeriodSelectorView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
 
-            // 周期选择器（支持左右滑动）
+            // 周期选择器（横向滚动胶囊列表）
             if !periodOptions.isEmpty {
-                HStack(spacing: 0) {
-                    // 向前按钮（更早的周期）
-                    Button {
-                        goToPreviousPeriod()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(canGoBack ? .blue : .gray.opacity(0.3))
-                            .frame(width: 44, height: 44)
-                    }
-                    .disabled(!canGoBack)
-
-                    Spacer()
-
-                    // 当前周期显示
-                    Text(selectedOption?.displayName ?? "选择周期")
-                        .font(.headline)
-                        .foregroundColor(.blue)
-
-                    Spacer()
-
-                    // 向后按钮（更晚的周期）
-                    Button {
-                        goToNextPeriod()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(canGoForward ? .blue : .gray.opacity(0.3))
-                            .frame(width: 44, height: 44)
-                    }
-                    .disabled(!canGoForward)
-                }
-                .padding(.horizontal, 8)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 30)
-                        .onEnded { value in
-                            // 左滑 = 向后（更晚的周期）
-                            if value.translation.width < -30 && canGoForward {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    goToNextPeriod()
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(periodOptions) { option in
+                                PeriodCapsule(
+                                    option: option,
+                                    isSelected: selectedOption?.id == option.id
+                                ) {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedOption = option
+                                    }
                                 }
+                                .id(option.id)
                             }
-                            // 右滑 = 向前（更早的周期）
-                            else if value.translation.width > 30 && canGoBack {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    goToPreviousPeriod()
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    .onAppear {
+                        // 初始滚动到选中项
+                        if let selected = selectedOption {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation {
+                                    proxy.scrollTo(selected.id, anchor: .center)
                                 }
                             }
                         }
-                )
+                    }
+                    .onChange(of: selectedOption) { _, newValue in
+                        // 选中项变化时滚动到对应位置
+                        if let selected = newValue {
+                            withAnimation {
+                                proxy.scrollTo(selected.id, anchor: .center)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+}
 
-    /// 切换到上一个周期（更早）
-    /// 作者: xiaolei
-    private func goToPreviousPeriod() {
-        guard canGoBack else { return }
-        selectedOption = periodOptions[currentIndex + 1]
-    }
+/// 周期胶囊标签
+/// 作者: xiaolei
+struct PeriodCapsule: View {
+    let option: PeriodOption
+    let isSelected: Bool
+    let onTap: () -> Void
 
-    /// 切换到下一个周期（更晚）
-    /// 作者: xiaolei
-    private func goToNextPeriod() {
-        guard canGoForward else { return }
-        selectedOption = periodOptions[currentIndex - 1]
+    var body: some View {
+        Button(action: onTap) {
+            Text(option.displayName)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundColor(isSelected ? .white : .primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.blue : Color(.systemGray5))
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
