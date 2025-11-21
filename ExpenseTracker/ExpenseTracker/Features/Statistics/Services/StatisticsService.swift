@@ -36,10 +36,12 @@ class StatisticsService {
     /// 包含：本周、上周、以及所有有交易数据的历史周
     private static func getWeekOptions(modelContext: ModelContext) -> [PeriodOption] {
         var options: [PeriodOption] = []
-        let calendar = Calendar.current
+        // 使用周一作为一周起始（中国习惯）
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 2 = 周一
         let now = Date()
 
-        // 本周
+        // 本周（从周一开始）
         let thisWeekStart = calendar.dateInterval(of: .weekOfYear, for: now)!.start
         let thisWeekEnd = calendar.date(byAdding: .day, value: 7, to: thisWeekStart)!
         options.append(PeriodOption(
@@ -146,7 +148,9 @@ class StatisticsService {
     /// 作者: xiaolei
     private static func getHistoricalWeeks(modelContext: ModelContext, excludingLast: Int) -> [PeriodOption] {
         var options: [PeriodOption] = []
-        let calendar = Calendar.current
+        // 使用周一作为一周起始（中国习惯）
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 2 = 周一
         let now = Date()
 
         // 获取所有交易的日期

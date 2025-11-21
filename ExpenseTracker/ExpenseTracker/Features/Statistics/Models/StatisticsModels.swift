@@ -126,39 +126,26 @@ struct PeriodStatistics {
         totalCount > 0
     }
 
-    /// 已经过的天数（包含起始日，结束日不超过当前时间）
+    /// 已经过的天数（从周期开始到今天，包含首尾两天）
     /// 作者: xiaolei
+    /// 例如：本周统计，今天周五，则返回5（周一到周五）
     var elapsedDays: Int {
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: Date())
+        let periodStart = calendar.startOfDay(for: period.startDate)
 
-        // 针对周统计，使用 ISO 周（周一为一周开始）确保天数符合用户认知
-        if period.period == .week {
-            var isoCal = Calendar(identifier: .iso8601)
-            isoCal.firstWeekday = 2 // 周一
+        // 周期结束日是开区间，需要减1天得到闭区间的最后一天
+        let periodEndExclusive = calendar.startOfDay(for: period.endDate)
+        let periodEndInclusive = calendar.date(byAdding: .day, value: -1, to: periodEndExclusive) ?? periodEndExclusive
 
-            // 获取该周的起始周一
-            let comp = isoCal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: period.startDate)
-            let isoStart = isoCal.date(from: comp) ?? calendar.startOfDay(for: period.startDate)
-            // 该周的结束开区间（下周一）
-            let isoEndExclusive = isoCal.date(byAdding: .day, value: 7, to: isoStart) ?? period.endDate
+        // 取周期结束日和今天的较小值作为实际结束日
+        let effectiveEnd = min(periodEndInclusive, todayStart)
 
-            let endInclusive = isoCal.date(byAdding: .day, value: -1, to: isoEndExclusive) ?? isoEndExclusive
-            let logicalEnd = min(endInclusive, todayStart)
+        // 确保实际结束日不早于开始日
+        guard effectiveEnd >= periodStart else { return 1 }
 
-            guard logicalEnd >= isoStart else { return 1 }
-            let days = isoCal.dateComponents([.day], from: isoStart, to: logicalEnd).day ?? 0
-            return max(1, days + 1)
-        }
-
-        // 月/年沿用周期起止，但仍按开区间处理 endDate
-        let start = calendar.startOfDay(for: period.startDate)
-        let endExclusive = calendar.startOfDay(for: period.endDate)
-        let endInclusive = calendar.date(byAdding: .day, value: -1, to: endExclusive) ?? endExclusive
-        let logicalEnd = min(endInclusive, todayStart)
-
-        guard logicalEnd >= start else { return 1 }
-        let days = calendar.dateComponents([.day], from: start, to: logicalEnd).day ?? 0
+        // 计算天数差（+1 因为包含首尾两天）
+        let days = calendar.dateComponents([.day], from: periodStart, to: effectiveEnd).day ?? 0
         return max(1, days + 1)
     }
 
