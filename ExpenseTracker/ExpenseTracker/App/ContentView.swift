@@ -175,7 +175,7 @@ struct TransactionListView: View {
                     // 交易列表
                     List {
                         ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { date in
-                            Section(header: Text(formatSectionDate(date))) {
+                            Section {
                                 ForEach(groupedTransactions[date] ?? []) { transaction in
                                     TransactionRow(transaction: transaction)
                                         .onTapGesture {
@@ -185,6 +185,23 @@ struct TransactionListView: View {
                                 }
                                 .onDelete { indexSet in
                                     deleteTransactions(at: indexSet, for: date)
+                                }
+                            } header: {
+                                HStack {
+                                    Text(formatSectionDate(date))
+                                    Spacer()
+                                    HStack(spacing: 8) {
+                                        totalBadge(
+                                            title: "收入",
+                                            amount: dailyIncomeTotal(for: date),
+                                            isIncome: true
+                                        )
+                                        totalBadge(
+                                            title: "支出",
+                                            amount: dailyExpenseTotal(for: date),
+                                            isIncome: false
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -266,6 +283,56 @@ struct TransactionListView: View {
         offsets.forEach { index in
             modelContext.delete(transactions[index])
         }
+    }
+
+    /// 当日收入总额
+    private func dailyIncomeTotal(for date: Date) -> Double {
+        guard let transactions = groupedTransactions[date] else { return 0 }
+        return transactions
+            .filter { $0.type == .income }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    /// 当日支出总额
+    private func dailyExpenseTotal(for date: Date) -> Double {
+        guard let transactions = groupedTransactions[date] else { return 0 }
+        return transactions
+            .filter { $0.type == .expense }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    /// 汇总徽标视图
+    @ViewBuilder
+    private func totalBadge(title: String, amount: Double, isIncome: Bool) -> some View {
+        let bgColor = isIncome ? Color.green.opacity(0.12) : Color.red.opacity(0.12)
+        let textColor = isIncome ? Color.green : Color.red
+
+        HStack(spacing: 4) {
+            Text(title)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+            Text(formatAmount(amount, isIncome: isIncome))
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(textColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(bgColor)
+        .clipShape(Capsule())
+    }
+
+    /// 金额格式化（收入带 +，支出带 -）
+    private func formatAmount(_ amount: Double, isIncome: Bool) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "CNY"
+        formatter.currencySymbol = "¥"
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+
+        let prefix = isIncome ? "+" : "-"
+        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "¥0.00"
+        return amount == 0 ? "¥0.00" : "\(prefix)\(formatted)"
     }
 }
 
