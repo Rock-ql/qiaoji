@@ -10,6 +10,22 @@
 import SwiftUI
 import SwiftData
 
+// 日期分组标题格式化器：显示为“2025年11月20日”
+private let sectionDateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "yyyy年M月d日"
+    return formatter
+}()
+
+// 行内时间格式化器：只保留当日时间，避免重复日期信息
+private let timeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "zh_CN")
+    formatter.dateFormat = "HH:mm"
+    return formatter
+}()
+
 /// 导航参数结构 - 用于从统计页面传递分类和时间信息
 struct CategoryTransactionParams: Hashable {
     let categoryId: UUID?           // 分类ID（nil表示未分类）
@@ -37,9 +53,6 @@ struct CategoryTransactionListView: View {
 
     /// 选中的交易（用于弹出编辑页面）
     @State private var selectedTransaction: Transaction?
-
-    /// 是否显示交易详情/编辑页面
-    @State private var showTransactionDetail = false
 
     /// 初始化视图
     /// - Parameter params: 分类和时间段参数
@@ -117,12 +130,12 @@ struct CategoryTransactionListView: View {
                 }
             }
         }
-        .sheet(isPresented: $showTransactionDetail) {
-            if let transaction = selectedTransaction {
-                NavigationStack {
-                    EditTransactionView(transaction: transaction)
-                }
+        .sheet(item: $selectedTransaction) { transaction in
+            NavigationStack {
+                EditTransactionView(transaction: transaction)
             }
+            // 保证弹窗内也能访问同一数据容器，避免环境缺失导致空白
+            .modelContainer(modelContext.container)
         }
     }
 
@@ -211,15 +224,18 @@ struct CategoryTransactionListView: View {
         Section {
             ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { date in
                 // 日期分组标题
-                Section(header: Text(date, style: .date)) {
+                Section {
                     ForEach(groupedTransactions[date] ?? []) { transaction in
                         TransactionRowView(transaction: transaction)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 selectedTransaction = transaction
-                                showTransactionDetail = true
                             }
                     }
+                } header: {
+                    Text(sectionDateFormatter.string(from: date))
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -267,7 +283,7 @@ private struct TransactionRowView: View {
 
             // 中间：日期和备注
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.date, format: .dateTime.month().day().hour().minute())
+                Text(timeFormatter.string(from: transaction.date))
                     .font(.subheadline)
                     .fontWeight(.medium)
 

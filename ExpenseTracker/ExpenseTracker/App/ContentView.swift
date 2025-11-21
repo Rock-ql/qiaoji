@@ -283,7 +283,7 @@ struct TransactionRow: View {
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(Color(hex: transaction.category?.color ?? "95A5A6") ?? .gray)
+                        .fill(Color(transaction.category?.color ?? "95A5A6"))
                 )
 
             // 交易信息
@@ -567,8 +567,31 @@ struct AddTransactionView: View {
 }
 
 // MARK: - 颜色扩展
-// Color扩展已在 Features/Statistics/Models/StatisticsModels.swift 中实现
-// 作者: xiaolei
+
+extension Color {
+    /// 从十六进制字符串创建颜色
+    /// 作者: xiaolei
+    /// - Parameter hex: 十六进制颜色字符串（如 "FF6B6B"）
+    init(_ hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+
+        let r, g, b: Double
+        switch hex.count {
+        case 6: // RGB
+            r = Double((int >> 16) & 0xFF) / 255
+            g = Double((int >> 8) & 0xFF) / 255
+            b = Double(int & 0xFF) / 255
+        default:
+            r = 0
+            g = 0
+            b = 0
+        }
+
+        self.init(red: r, green: g, blue: b)
+    }
+}
 
 // MARK: - 预览
 
