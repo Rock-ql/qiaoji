@@ -15,7 +15,7 @@ struct StatisticsSummaryCard: View {
     let statistics: PeriodStatistics
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             // 标题
             HStack {
                 Image(systemName: "chart.bar.fill")
@@ -29,7 +29,7 @@ struct StatisticsSummaryCard: View {
             }
 
             // 统计数据
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 // 收入
                 HStack {
                     HStack(spacing: 6) {
@@ -98,7 +98,8 @@ struct StatisticsSummaryCard: View {
             }
         }
         .frame(height: 220)
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
