@@ -171,7 +171,6 @@ struct TransactionListView: View {
     @Query(sort: \Transaction.date, order: .reverse) var allTransactions: [Transaction]
     @Environment(\.modelContext) private var modelContext
 
-    @State private var selectedTransaction: Transaction?
     @State private var selectedLedger: Ledger?
 
     /// 根据选中账本筛选的交易
@@ -214,10 +213,9 @@ struct TransactionListView: View {
                         ForEach(groupedTransactions.keys.sorted(by: >), id: \.self) { date in
                             Section {
                                 ForEach(groupedTransactions[date] ?? []) { transaction in
-                                    TransactionRow(transaction: transaction)
-                                        .onTapGesture {
-                                            selectedTransaction = transaction
-                                        }
+                                    NavigationLink(value: transaction) {
+                                        TransactionRow(transaction: transaction)
+                                    }
                                 }
                                 .onDelete { indexSet in
                                     deleteTransactions(at: indexSet, for: date)
@@ -273,8 +271,8 @@ struct TransactionListView: View {
                     }
                 }
             }
-            .sheet(item: $selectedTransaction) { transaction in
-                EditTransactionView(transaction: transaction)
+            .navigationDestination(for: Transaction.self) { transaction in
+                TransactionDetailView(transaction: transaction)
             }
         }
     }
