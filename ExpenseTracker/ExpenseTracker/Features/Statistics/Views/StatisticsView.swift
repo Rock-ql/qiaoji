@@ -125,10 +125,14 @@ struct StatisticsView: View {
         }
         .onChange(of: selectedPeriod) { oldValue, newValue in
             loadPeriodOptions()
+            // 重新计算统计数据（因为selectedOption可能不变，不会触发自动刷新）
+            calculateStatistics()
         }
         .onChange(of: selectedLedger) { oldValue, newValue in
             // 账本切换时重新加载周期选项（历史周期会根据账本变化）
             loadPeriodOptions()
+            // 重新计算统计数据（因为selectedOption可能不变，不会触发自动刷新）
+            calculateStatistics()
         }
         .onChange(of: selectedOption) { oldValue, newValue in
             if newValue != nil {
