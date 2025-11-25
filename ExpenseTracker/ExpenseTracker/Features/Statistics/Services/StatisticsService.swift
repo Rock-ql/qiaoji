@@ -19,22 +19,23 @@ class StatisticsService {
     /// - Parameters:
     ///   - period: 时间维度（周/月/年）
     ///   - modelContext: SwiftData模型上下文
+    ///   - ledgerId: 账本ID（可选，nil表示全部账本）
     /// - Returns: 周期选项数组
-    static func getPeriodOptions(for period: TimePeriod, modelContext: ModelContext) -> [PeriodOption] {
+    static func getPeriodOptions(for period: TimePeriod, modelContext: ModelContext, ledgerId: UUID? = nil) -> [PeriodOption] {
         switch period {
         case .week:
-            return getWeekOptions(modelContext: modelContext)
+            return getWeekOptions(modelContext: modelContext, ledgerId: ledgerId)
         case .month:
-            return getMonthOptions(modelContext: modelContext)
+            return getMonthOptions(modelContext: modelContext, ledgerId: ledgerId)
         case .year:
-            return getYearOptions(modelContext: modelContext)
+            return getYearOptions(modelContext: modelContext, ledgerId: ledgerId)
         }
     }
 
     /// 获取周选项列表
     /// 作者: xiaolei
     /// 包含：本周、上周、以及所有有交易数据的历史周
-    private static func getWeekOptions(modelContext: ModelContext) -> [PeriodOption] {
+    private static func getWeekOptions(modelContext: ModelContext, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         // 使用周一作为一周起始（中国习惯）
         var calendar = Calendar.current
@@ -64,7 +65,7 @@ class StatisticsService {
         ))
 
         // 获取所有有交易数据的周
-        let historicalWeeks = getHistoricalWeeks(modelContext: modelContext, excludingLast: 2)
+        let historicalWeeks = getHistoricalWeeks(modelContext: modelContext, excludingLast: 2, ledgerId: ledgerId)
         options.append(contentsOf: historicalWeeks)
 
         return options
@@ -73,7 +74,7 @@ class StatisticsService {
     /// 获取月选项列表
     /// 作者: xiaolei
     /// 包含：本月、上月、以及所有有交易数据的历史月
-    private static func getMonthOptions(modelContext: ModelContext) -> [PeriodOption] {
+    private static func getMonthOptions(modelContext: ModelContext, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         let calendar = Calendar.current
         let now = Date()
@@ -101,7 +102,7 @@ class StatisticsService {
         ))
 
         // 获取所有有交易数据的月份
-        let historicalMonths = getHistoricalMonths(modelContext: modelContext, excludingLast: 2)
+        let historicalMonths = getHistoricalMonths(modelContext: modelContext, excludingLast: 2, ledgerId: ledgerId)
         options.append(contentsOf: historicalMonths)
 
         return options
@@ -110,7 +111,7 @@ class StatisticsService {
     /// 获取年选项列表
     /// 作者: xiaolei
     /// 包含：今年、去年、以及所有有交易数据的历史年
-    private static func getYearOptions(modelContext: ModelContext) -> [PeriodOption] {
+    private static func getYearOptions(modelContext: ModelContext, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         let calendar = Calendar.current
         let now = Date()
@@ -138,7 +139,7 @@ class StatisticsService {
         ))
 
         // 获取所有有交易数据的年份
-        let historicalYears = getHistoricalYears(modelContext: modelContext, excludingLast: 2)
+        let historicalYears = getHistoricalYears(modelContext: modelContext, excludingLast: 2, ledgerId: ledgerId)
         options.append(contentsOf: historicalYears)
 
         return options
@@ -146,7 +147,7 @@ class StatisticsService {
 
     /// 获取历史周选项（有交易数据的周）
     /// 作者: xiaolei
-    private static func getHistoricalWeeks(modelContext: ModelContext, excludingLast: Int) -> [PeriodOption] {
+    private static func getHistoricalWeeks(modelContext: ModelContext, excludingLast: Int, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         // 使用周一作为一周起始（中国习惯）
         var calendar = Calendar.current
@@ -154,9 +155,20 @@ class StatisticsService {
         let now = Date()
 
         // 获取所有交易的日期
-        let descriptor = FetchDescriptor<Transaction>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
+        let descriptor: FetchDescriptor<Transaction>
+        if let targetLedgerId = ledgerId {
+            let predicate = #Predicate<Transaction> { transaction in
+                transaction.ledger?.id == targetLedgerId
+            }
+            descriptor = FetchDescriptor<Transaction>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Transaction>(
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        }
 
         guard let transactions = try? modelContext.fetch(descriptor) else {
             return []
@@ -203,15 +215,26 @@ class StatisticsService {
 
     /// 获取历史月选项（有交易数据的月）
     /// 作者: xiaolei
-    private static func getHistoricalMonths(modelContext: ModelContext, excludingLast: Int) -> [PeriodOption] {
+    private static func getHistoricalMonths(modelContext: ModelContext, excludingLast: Int, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         let calendar = Calendar.current
         let now = Date()
 
         // 获取所有交易的日期
-        let descriptor = FetchDescriptor<Transaction>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
+        let descriptor: FetchDescriptor<Transaction>
+        if let targetLedgerId = ledgerId {
+            let predicate = #Predicate<Transaction> { transaction in
+                transaction.ledger?.id == targetLedgerId
+            }
+            descriptor = FetchDescriptor<Transaction>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Transaction>(
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        }
 
         guard let transactions = try? modelContext.fetch(descriptor) else {
             return []
@@ -261,15 +284,26 @@ class StatisticsService {
 
     /// 获取历史年选项（有交易数据的年）
     /// 作者: xiaolei
-    private static func getHistoricalYears(modelContext: ModelContext, excludingLast: Int) -> [PeriodOption] {
+    private static func getHistoricalYears(modelContext: ModelContext, excludingLast: Int, ledgerId: UUID? = nil) -> [PeriodOption] {
         var options: [PeriodOption] = []
         let calendar = Calendar.current
         let now = Date()
 
         // 获取所有交易的日期
-        let descriptor = FetchDescriptor<Transaction>(
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
+        let descriptor: FetchDescriptor<Transaction>
+        if let targetLedgerId = ledgerId {
+            let predicate = #Predicate<Transaction> { transaction in
+                transaction.ledger?.id == targetLedgerId
+            }
+            descriptor = FetchDescriptor<Transaction>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<Transaction>(
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+        }
 
         guard let transactions = try? modelContext.fetch(descriptor) else {
             return []
@@ -317,15 +351,24 @@ class StatisticsService {
     /// - Parameters:
     ///   - periodOption: 周期选项
     ///   - modelContext: SwiftData模型上下文
+    ///   - ledgerId: 账本ID（可选，nil表示全部账本）
     /// - Returns: 周期统计数据
-    static func calculateStatistics(for periodOption: PeriodOption, modelContext: ModelContext) -> PeriodStatistics {
+    static func calculateStatistics(for periodOption: PeriodOption, modelContext: ModelContext, ledgerId: UUID? = nil) -> PeriodStatistics {
         // 查询指定时间范围内的所有交易
         // 捕获外部变量为局部常量，以便在Predicate中使用
         let startDate = periodOption.startDate
         let endDate = periodOption.endDate
 
-        let predicate = #Predicate<Transaction> { transaction in
-            transaction.date >= startDate && transaction.date < endDate
+        // 根据是否有账本ID构建不同的Predicate
+        let predicate: Predicate<Transaction>
+        if let targetLedgerId = ledgerId {
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.date >= startDate && transaction.date < endDate && transaction.ledger?.id == targetLedgerId
+            }
+        } else {
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.date >= startDate && transaction.date < endDate
+            }
         }
 
         let descriptor = FetchDescriptor<Transaction>(
@@ -421,8 +464,9 @@ class StatisticsService {
     /// - Parameters:
     ///   - periodOption: 周期选项
     ///   - modelContext: SwiftData模型上下文
+    ///   - ledgerId: 账本ID（可选，nil表示全部账本）
     /// - Returns: 趋势数据点数组
-    static func calculateTrendData(for periodOption: PeriodOption, modelContext: ModelContext) -> [TrendDataPoint] {
+    static func calculateTrendData(for periodOption: PeriodOption, modelContext: ModelContext, ledgerId: UUID? = nil) -> [TrendDataPoint] {
         var calendar = Calendar.current
         calendar.firstWeekday = 2 // 周一为起始
 
@@ -430,8 +474,16 @@ class StatisticsService {
         let startDate = periodOption.startDate
         let endDate = periodOption.endDate
 
-        let predicate = #Predicate<Transaction> { transaction in
-            transaction.date >= startDate && transaction.date < endDate
+        // 根据是否有账本ID构建不同的Predicate
+        let predicate: Predicate<Transaction>
+        if let targetLedgerId = ledgerId {
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.date >= startDate && transaction.date < endDate && transaction.ledger?.id == targetLedgerId
+            }
+        } else {
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.date >= startDate && transaction.date < endDate
+            }
         }
 
         let descriptor = FetchDescriptor<Transaction>(

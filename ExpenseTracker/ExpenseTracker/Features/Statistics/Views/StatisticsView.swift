@@ -216,7 +216,11 @@ struct StatisticsView: View {
     /// 加载周期选项列表
     /// 作者: xiaolei
     private func loadPeriodOptions() {
-        periodOptions = StatisticsService.getPeriodOptions(for: selectedPeriod, modelContext: modelContext)
+        periodOptions = StatisticsService.getPeriodOptions(
+            for: selectedPeriod,
+            modelContext: modelContext,
+            ledgerId: selectedLedger?.id
+        )
 
         // 自动选择第一个选项（本周/本月/今年）
         if let firstOption = periodOptions.first {
@@ -234,10 +238,18 @@ struct StatisticsView: View {
         }
 
         // 计算汇总统计数据
-        statistics = StatisticsService.calculateStatistics(for: option, modelContext: modelContext)
+        statistics = StatisticsService.calculateStatistics(
+            for: option,
+            modelContext: modelContext,
+            ledgerId: selectedLedger?.id
+        )
 
         // 计算趋势数据
-        trendData = StatisticsService.calculateTrendData(for: option, modelContext: modelContext)
+        trendData = StatisticsService.calculateTrendData(
+            for: option,
+            modelContext: modelContext,
+            ledgerId: selectedLedger?.id
+        )
     }
 
     /// 创建导航参数
