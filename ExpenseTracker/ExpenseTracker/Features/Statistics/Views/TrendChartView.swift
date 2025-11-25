@@ -76,26 +76,38 @@ struct TrendChartView: View {
                 .frame(height: 160)
             } else {
                 Chart {
-                    // 收入折线
+                    // 收入折线 - 使用系列标识
                     ForEach(trendData) { dataPoint in
                         LineMark(
                             x: .value("日期", dataPoint.date),
-                            y: .value("收入", dataPoint.income)
+                            y: .value("金额", dataPoint.income),
+                            series: .value("类型", "收入")
                         )
                         .foregroundStyle(Color.green)
-                        .symbol(Circle())
                         .interpolationMethod(.catmullRom)
+                        .symbol {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                        }
+                        .lineStyle(StrokeStyle(lineWidth: 2))
                     }
 
-                    // 支出折线
+                    // 支出折线 - 使用系列标识
                     ForEach(trendData) { dataPoint in
                         LineMark(
                             x: .value("日期", dataPoint.date),
-                            y: .value("支出", dataPoint.expense)
+                            y: .value("金额", dataPoint.expense),
+                            series: .value("类型", "支出")
                         )
                         .foregroundStyle(Color.red)
-                        .symbol(Circle())
                         .interpolationMethod(.catmullRom)
+                        .symbol {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 6, height: 6)
+                        }
+                        .lineStyle(StrokeStyle(lineWidth: 2))
                     }
 
                     // 选中标记（仅显示虚线，不带 annotation）
@@ -183,21 +195,41 @@ struct TrendChartView: View {
         }
     }
 
-    /// 选中数据点的注释视图（简化版：只显示日期和消费金额）
+    /// 选中数据点的注释视图（显示日期、收入和支出）
     /// 作者: xiaolei
     @ViewBuilder
     private func selectionAnnotation(for dataPoint: TrendDataPoint) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             // 日期
             Text(dataPoint.formattedDate(for: period))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
+            // 收入金额
+            if dataPoint.income > 0 {
+                HStack(spacing: 4) {
+                    Text("收")
+                        .font(.caption2)
+                        .foregroundColor(.green)
+                    Text(String(format: "¥%.0f", dataPoint.income))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.green)
+                }
+            }
+
             // 支出金额
-            Text(String(format: "¥%.2f", dataPoint.expense))
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.red)
+            if dataPoint.expense > 0 {
+                HStack(spacing: 4) {
+                    Text("支")
+                        .font(.caption2)
+                        .foregroundColor(.red)
+                    Text(String(format: "¥%.0f", dataPoint.expense))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.red)
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
