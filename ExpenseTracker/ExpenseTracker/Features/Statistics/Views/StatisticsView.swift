@@ -119,10 +119,8 @@ struct StatisticsView: View {
             loadPeriodOptions()
         }
         .onChange(of: selectedLedger) { oldValue, newValue in
-            // 账本切换时重新计算统计
-            if selectedOption != nil {
-                calculateStatistics()
-            }
+            // 账本切换时重新加载周期选项（历史周期会根据账本变化）
+            loadPeriodOptions()
         }
         .onChange(of: selectedOption) { oldValue, newValue in
             if newValue != nil {
