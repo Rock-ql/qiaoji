@@ -40,6 +40,10 @@ struct StatisticsView: View {
     // 监听所有交易数据的变化，用于触发统计自动刷新
     @Query private var allTransactions: [Transaction]
 
+    // 账本列表
+    @Query(filter: #Predicate<Ledger> { !$0.isArchived }, sort: \Ledger.sortOrder)
+    private var ledgers: [Ledger]
+
     /// 显示模式枚举
     /// 作者: xiaolei
     enum DisplayMode: String, CaseIterable {
@@ -113,6 +117,10 @@ struct StatisticsView: View {
             }
         }
         .onAppear {
+            // 初始化默认选中的账本（如果当前没有选中任何账本）
+            if selectedLedger == nil {
+                selectedLedger = ledgers.first(where: { $0.isDefault }) ?? ledgers.first
+            }
             loadPeriodOptions()
         }
         .onChange(of: selectedPeriod) { oldValue, newValue in
