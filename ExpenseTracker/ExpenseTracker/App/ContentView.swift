@@ -169,6 +169,8 @@ struct FloatingAddButton: View {
 /// 作者: xiaolei
 struct TransactionListView: View {
     @Query(sort: \Transaction.date, order: .reverse) var allTransactions: [Transaction]
+    @Query(filter: #Predicate<Ledger> { !$0.isArchived }, sort: \Ledger.sortOrder)
+    var ledgers: [Ledger]
     @Environment(\.modelContext) private var modelContext
 
     @State private var selectedLedger: Ledger?
@@ -273,6 +275,12 @@ struct TransactionListView: View {
             }
             .navigationDestination(for: Transaction.self) { transaction in
                 TransactionDetailView(transaction: transaction)
+            }
+            .task {
+                // 初始化默认选中的账本（如果当前没有选中任何账本）
+                if selectedLedger == nil {
+                    selectedLedger = ledgers.first(where: { $0.isDefault }) ?? ledgers.first
+                }
             }
         }
     }

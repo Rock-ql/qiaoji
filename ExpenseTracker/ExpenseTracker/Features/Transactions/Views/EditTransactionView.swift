@@ -54,10 +54,13 @@ struct EditTransactionView: View {
                 // 金额输入
                 Section {
                     Button(action: {
-                        // 点击显示自定义键盘
-                        focusedField = nil // 关闭系统键盘
-                        withAnimation {
-                            showCustomKeyboard = true
+                        // 立即关闭系统键盘
+                        focusedField = nil
+                        // 使用短延迟确保键盘关闭动画完成后再打开自定义键盘
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                showCustomKeyboard = true
+                            }
                         }
                     }) {
                         HStack {
@@ -77,6 +80,16 @@ struct EditTransactionView: View {
                     .buttonStyle(.plain)
                 } header: {
                     Text("金额")
+                }
+
+                // 备注输入
+                Section {
+                    TextField("添加备注（可选）", text: $note, axis: .vertical)
+                        .lineLimit(3...6)
+                        .focused($focusedField, equals: .note)
+                        .submitLabel(.done)
+                } header: {
+                    Text("备注")
                 }
 
                 // 分类选择
@@ -115,14 +128,6 @@ struct EditTransactionView: View {
                 }
             .navigationTitle("编辑交易")
             .navigationBarTitleDisplayMode(.inline)
-            .background(
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        // 点击表单空白区域关闭键盘
-                        focusedField = nil
-                    }
-            )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -137,9 +142,29 @@ struct EditTransactionView: View {
                     .disabled(!canSave)
                 }
 
-                // 键盘工具栏：显示"完成"按钮
+                // 键盘工具栏：显示切换和完成按钮
                 ToolbarItemGroup(placement: .keyboard) {
+                    // 金额按钮（仅在备注输入时显示）
+                    if focusedField == .note {
+                        Button(action: {
+                            // 关闭中文键盘
+                            focusedField = nil
+                            // 短延迟后打开数字键盘
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    showCustomKeyboard = true
+                                }
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "number")
+                                Text("金额")
+                            }
+                        }
+                    }
+
                     Spacer()
+
                     Button("完成") {
                         focusedField = nil
                     }
@@ -165,6 +190,14 @@ struct EditTransactionView: View {
                 // 数据加载完成
                 isLoading = false
             }
+            .onChange(of: focusedField) { oldValue, newValue in
+                // 当聚焦到备注输入框时，关闭自定义数字键盘
+                if newValue == .note && showCustomKeyboard {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showCustomKeyboard = false
+                    }
+                }
+            }
             }
 
             // 自定义数字键盘
@@ -172,23 +205,55 @@ struct EditTransactionView: View {
                 VStack(spacing: 0) {
                     Spacer()
 
+                    // 键盘顶部工具栏
+                    HStack {
+                        Button(action: {
+                            // 关闭数字键盘
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showCustomKeyboard = false
+                            }
+                            // 延迟后打开中文键盘
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                focusedField = .note
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "text.bubble")
+                                Text("备注")
+                            }
+                            .font(.system(size: 14))
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(Color(.systemBackground))
+                            )
+                        }
+                        .padding(.leading, 12)
+
+                        Spacer()
+                    }
+                    .padding(.bottom, 8)
+                    .background(Color(.systemGray6))
+
                     CustomNumericKeyboard(
                         amount: $amount,
                         date: $date,
                         note: $note,
                         onDismiss: {
-                            withAnimation {
+                            withAnimation(.easeOut(duration: 0.25)) {
                                 showCustomKeyboard = false
                             }
                         }
                     )
-                    .transition(.move(edge: .bottom))
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 .background(
                     Color.black.opacity(0.3)
                         .ignoresSafeArea()
                         .onTapGesture {
-                            withAnimation {
+                            withAnimation(.easeOut(duration: 0.25)) {
                                 showCustomKeyboard = false
                             }
                         }

@@ -83,6 +83,18 @@ struct TransactionDetailView: View {
                     .foregroundColor(transaction.type == .income ? .green : .red)
                 Spacer()
             }
+
+            // 备注（如有）
+            if !transaction.note.isEmpty {
+                HStack {
+                    Text(transaction.note)
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .italic()
+                        .lineLimit(2)
+                    Spacer()
+                }
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -115,24 +127,6 @@ struct TransactionDetailView: View {
                     title: "账本",
                     value: ledger.name,
                     iconColor: Color(hex: ledger.color) ?? .blue
-                )
-
-                Divider()
-                    .padding(.leading, 52)
-            }
-
-            // 备注
-            if !transaction.note.isEmpty {
-                DetailRow(
-                    icon: "note.text",
-                    title: "备注",
-                    value: transaction.note
-                )
-            } else {
-                DetailRow(
-                    icon: "note.text",
-                    title: "备注",
-                    value: "无"
                 )
             }
         }
