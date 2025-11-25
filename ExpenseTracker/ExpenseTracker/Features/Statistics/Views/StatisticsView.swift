@@ -274,7 +274,8 @@ struct StatisticsView: View {
             startDate: selectedOption.startDate,
             endDate: selectedOption.endDate,
             transactionType: selectedTransactionType,
-            periodDisplayName: selectedOption.displayName
+            periodDisplayName: selectedOption.displayName,
+            ledgerId: selectedLedger?.id
         )
     }
 

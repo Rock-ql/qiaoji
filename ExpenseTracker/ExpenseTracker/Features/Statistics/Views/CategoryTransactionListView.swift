@@ -36,6 +36,7 @@ struct CategoryTransactionParams: Hashable {
     let endDate: Date              // 时间段结束日期
     let transactionType: TransactionType  // 交易类型（收入/支出）
     let periodDisplayName: String   // 时间段显示名称，如"本周"、"2025年11月"
+    let ledgerId: UUID?            // 账本ID（nil表示全部账本）
 }
 
 /// 分类交易明细列表视图
@@ -61,23 +62,41 @@ struct CategoryTransactionListView: View {
     }
 
     /// 手动获取交易数据
-    /// 由于SwiftData Predicate不支持枚举类型比较，我们在Predicate中只筛选分类和时间，然后在Swift代码中筛选类型
+    /// 由于SwiftData Predicate不支持枚举类型比较，我们在Predicate中只筛选分类、时间和账本，然后在Swift代码中筛选类型
     private func fetchTransactions() {
         let categoryId = params.categoryId
         let startDate = params.startDate
         let endDate = params.endDate
         let type = params.transactionType
+        let ledgerId = params.ledgerId
 
-        // 构建Predicate：只筛选分类和时间段，不筛选类型
+        // 构建Predicate：筛选分类、时间段和账本，不筛选类型
         let predicate: Predicate<Transaction>
-        if let categoryId = categoryId {
-            // 有分类ID：匹配指定分类的交易
+
+        // 根据是否有分类ID和账本ID构建不同的Predicate
+        switch (categoryId, ledgerId) {
+        case (.some(let catId), .some(let ledId)):
+            // 有分类ID和账本ID
             predicate = #Predicate<Transaction> { transaction in
-                transaction.category?.id == categoryId &&
+                transaction.category?.id == catId &&
+                transaction.date >= startDate && transaction.date < endDate &&
+                transaction.ledger?.id == ledId
+            }
+        case (.some(let catId), .none):
+            // 有分类ID，无账本ID（全部账本）
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.category?.id == catId &&
                 transaction.date >= startDate && transaction.date < endDate
             }
-        } else {
-            // 无分类ID：匹配未分类的交易
+        case (.none, .some(let ledId)):
+            // 无分类ID，有账本ID（未分类但特定账本）
+            predicate = #Predicate<Transaction> { transaction in
+                transaction.category == nil &&
+                transaction.date >= startDate && transaction.date < endDate &&
+                transaction.ledger?.id == ledId
+            }
+        case (.none, .none):
+            // 无分类ID，无账本ID（未分类且全部账本）
             predicate = #Predicate<Transaction> { transaction in
                 transaction.category == nil &&
                 transaction.date >= startDate && transaction.date < endDate
@@ -332,7 +351,8 @@ private struct TransactionRowView: View {
                 startDate: Date().addingTimeInterval(-7*24*3600),
                 endDate: Date(),
                 transactionType: .expense,
-                periodDisplayName: "本周"
+                periodDisplayName: "本周",
+                ledgerId: nil
             )
         )
     }
