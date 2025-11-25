@@ -13,41 +13,32 @@ struct TransactionDetailView: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // 金额卡片
-                    amountCard
+        ScrollView {
+            VStack(spacing: 24) {
+                // 金额卡片
+                amountCard
 
-                    // 详情信息
-                    detailsSection
+                // 详情信息
+                detailsSection
 
-                    // 操作按钮
-                    actionButtons
-                }
-                .padding()
+                // 操作按钮
+                actionButtons
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("交易详情")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
-                        dismiss()
-                    }
-                }
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("交易详情")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showEditSheet) {
+            EditTransactionView(transaction: transaction)
+        }
+        .alert("确认删除", isPresented: $showDeleteAlert) {
+            Button("取消", role: .cancel) { }
+            Button("删除", role: .destructive) {
+                deleteTransaction()
             }
-            .sheet(isPresented: $showEditSheet) {
-                EditTransactionView(transaction: transaction)
-            }
-            .alert("确认删除", isPresented: $showDeleteAlert) {
-                Button("取消", role: .cancel) { }
-                Button("删除", role: .destructive) {
-                    deleteTransaction()
-                }
-            } message: {
-                Text("确定要删除这笔交易吗？此操作无法撤销。")
-            }
+        } message: {
+            Text("确定要删除这笔交易吗？此操作无法撤销。")
         }
     }
 
