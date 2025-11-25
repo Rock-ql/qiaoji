@@ -46,12 +46,12 @@ struct TransactionDetailView: View {
     /// 作者: xiaolei
     @ViewBuilder
     private var amountCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // 分类图标
             Image(systemName: transaction.categoryIcon)
-                .font(.system(size: 50))
+                .font(.system(size: 32))
                 .foregroundColor(.white)
-                .frame(width: 100, height: 100)
+                .frame(width: 70, height: 70)
                 .background(
                     Circle()
                         .fill(Color(transaction.category?.color ?? "95A5A6"))
@@ -59,32 +59,32 @@ struct TransactionDetailView: View {
 
             // 分类名称
             Text(transaction.categoryName)
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.semibold)
 
             // 金额
             Text(transaction.type == .income ? "+\(transaction.formattedAmount)" : "-\(transaction.formattedAmount)")
-                .font(.system(size: 48, weight: .bold))
+                .font(.system(size: 36, weight: .bold))
                 .foregroundColor(transaction.type == .income ? .green : .red)
 
             // 交易类型标签
             Text(transaction.type == .income ? "收入" : "支出")
-                .font(.subheadline)
+                .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
                 .background(
                     Capsule()
                         .fill(transaction.type == .income ? Color.green : Color.red)
                 )
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
+        .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         )
     }
 
@@ -142,7 +142,7 @@ struct TransactionDetailView: View {
     /// 作者: xiaolei
     @ViewBuilder
     private var actionButtons: some View {
-        VStack(spacing: 12) {
+        HStack(spacing: 12) {
             // 编辑按钮
             Button(action: {
                 showEditSheet = true
