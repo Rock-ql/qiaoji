@@ -25,6 +25,7 @@ struct ExpenseTrackerApp: App {
                     Category.self,
                     Budget.self,
                     Account.self,
+                    Ledger.self,
                 configurations: ModelConfiguration(
                     // 暂时禁用iCloud，使用本地数据库
                     cloudKitDatabase: .none

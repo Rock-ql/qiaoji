@@ -71,6 +71,8 @@ struct ContentView: View {
         .task {
             // 首次启动时初始化默认分类
             await setupDefaultCategoriesIfNeeded()
+            // 首次启动时初始化默认账本
+            await setupDefaultLedgerIfNeeded()
         }
     }
 
@@ -108,6 +110,33 @@ struct ContentView: View {
         for category in expenseCategories + incomeCategories {
             modelContext.insert(category)
         }
+
+        // 保存数据
+        try? modelContext.save()
+    }
+
+    /// 初始化默认账本（如果需要）
+    /// 作者: xiaolei
+    @MainActor
+    private func setupDefaultLedgerIfNeeded() async {
+        // 检查是否已有账本数据
+        let descriptor = FetchDescriptor<Ledger>()
+        let existingLedgers = try? modelContext.fetch(descriptor)
+
+        guard existingLedgers?.isEmpty ?? true else { return }
+
+        // 创建默认账本
+        let defaultLedger = Ledger(
+            name: "日常账本",
+            icon: "book.fill",
+            color: "4A90E2",
+            description: "日常收支记录",
+            isDefault: true,
+            isArchived: false,
+            sortOrder: 0
+        )
+
+        modelContext.insert(defaultLedger)
 
         // 保存数据
         try? modelContext.save()

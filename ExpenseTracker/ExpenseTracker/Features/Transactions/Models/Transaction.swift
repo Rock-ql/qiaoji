@@ -46,6 +46,12 @@ final class Transaction {
     @Relationship(deleteRule: .nullify)
     var account: Account?
 
+    /// 关联的账本（多对一关系）
+    /// 作者: xiaolei
+    /// 为nil表示未归属任何账本（兼容旧数据）
+    @Relationship(deleteRule: .nullify)
+    var ledger: Ledger?
+
     /// 初始化交易记录
     /// - Parameters:
     ///   - amount: 交易金额
@@ -55,6 +61,7 @@ final class Transaction {
     ///   - merchant: 商户名称
     ///   - category: 关联分类
     ///   - account: 关联账户
+    ///   - ledger: 关联账本
     init(
         amount: Double,
         type: TransactionType,
@@ -62,7 +69,8 @@ final class Transaction {
         note: String = "",
         merchant: String? = nil,
         category: Category? = nil,
-        account: Account? = nil
+        account: Account? = nil,
+        ledger: Ledger? = nil
     ) {
         self.id = UUID()
         self.amount = amount
@@ -72,6 +80,7 @@ final class Transaction {
         self.merchant = merchant
         self.category = category
         self.account = account
+        self.ledger = ledger
         self.createdAt = Date()
         self.updatedAt = Date()
     }
