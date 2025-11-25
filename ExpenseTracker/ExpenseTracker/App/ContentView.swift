@@ -11,7 +11,7 @@ import SwiftData
 
 /// 应用主视图
 /// 作者: xiaolei
-/// 使用TabView实现底部导航，包含：交易、统计、预算、设置四个模块
+/// 使用TabView实现底部导航，包含：交易、统计、设置三个模块
 struct ContentView: View {
     /// 当前选中的Tab
     @State private var selectedTab = 0
@@ -40,19 +40,12 @@ struct ContentView: View {
                     }
                     .tag(1)
 
-                // 预算管理
-                BudgetView()
-                    .tabItem {
-                        Label("预算", systemImage: "dollarsign.circle.fill")
-                    }
-                    .tag(2)
-
                 // 设置
                 SettingsView()
                     .tabItem {
                         Label("设置", systemImage: "gearshape.fill")
                     }
-                    .tag(3)
+                    .tag(2)
             }
             .accentColor(.blue)
 
@@ -175,15 +168,31 @@ struct FloatingAddButton: View {
 /// 交易列表视图占位
 /// 作者: xiaolei
 struct TransactionListView: View {
-    @Query(sort: \Transaction.date, order: .reverse) var transactions: [Transaction]
+    @Query(sort: \Transaction.date, order: .reverse) var allTransactions: [Transaction]
     @Environment(\.modelContext) private var modelContext
 
     @State private var selectedTransaction: Transaction?
     @State private var showEditSheet = false
+    @State private var selectedLedger: Ledger?
+
+    /// 根据选中账本筛选的交易
+    /// 作者: xiaolei
+    private var transactions: [Transaction] {
+        guard let ledger = selectedLedger else {
+            return allTransactions
+        }
+        return allTransactions.filter { $0.ledger?.id == ledger.id }
+    }
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 0) {
+                // 账本选择器
+                LedgerPickerView(selectedLedger: $selectedLedger, showAllOption: true)
+                    .padding(.vertical, 8)
+
+                // 交易列表内容
+                Group {
                 if transactions.isEmpty {
                     // 空状态视图
                     VStack(spacing: 20) {
@@ -243,6 +252,7 @@ struct TransactionListView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
+                }
                 }
             }
             .navigationTitle("交易记录")
@@ -454,6 +464,12 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        LedgerListView()
+                    } label: {
+                        Label("账本管理", systemImage: "book.fill")
+                    }
+
+                    NavigationLink {
                         Text("账户管理")
                     } label: {
                         Label("账户管理", systemImage: "creditcard.fill")
@@ -495,10 +511,13 @@ struct AddTransactionView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Query var categories: [Category]
+    @Query(filter: #Predicate<Ledger> { !$0.isArchived }, sort: \Ledger.sortOrder)
+    var ledgers: [Ledger]
 
     @State private var amount: String = ""
     @State private var type: TransactionType = .expense
     @State private var selectedCategory: Category?
+    @State private var selectedLedger: Ledger?
     @State private var date = Date()
     @State private var note = ""
 
@@ -575,8 +594,46 @@ struct AddTransactionView: View {
                 } header: {
                     Text("分类")
                 }
+
+                // 账本选择
+                Section {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(ledgers.sorted()) { ledger in
+                                Button(action: {
+                                    selectedLedger = ledger
+                                }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: ledger.icon)
+                                            .font(.caption)
+                                        Text(ledger.name)
+                                            .font(.subheadline)
+                                    }
+                                    .fontWeight(selectedLedger?.id == ledger.id ? .semibold : .regular)
+                                    .foregroundColor(selectedLedger?.id == ledger.id ? .white : .primary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(selectedLedger?.id == ledger.id ? Color(hex: ledger.color) ?? Color.blue : Color(.systemGray6))
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("账本")
+                }
             }
             .navigationTitle("添加交易")
+            .task {
+                // 初始化默认账本
+                if selectedLedger == nil {
+                    selectedLedger = ledgers.first(where: { $0.isDefault }) ?? ledgers.first
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
@@ -659,7 +716,8 @@ struct AddTransactionView: View {
             type: type,
             date: date,
             note: note,
-            category: selectedCategory
+            category: selectedCategory,
+            ledger: selectedLedger
         )
 
         modelContext.insert(transaction)

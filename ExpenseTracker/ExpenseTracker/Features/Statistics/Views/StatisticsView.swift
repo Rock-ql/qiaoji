@@ -11,9 +11,12 @@ import SwiftData
 
 /// 统计主视图
 /// 作者: xiaolei
-/// 提供按周/月/年维度查看收支统计的功能
+/// 提供按周/月/年维度查看收支统计的功能，支持按账本筛选
 struct StatisticsView: View {
     @Environment(\.modelContext) private var modelContext
+
+    // 账本选择
+    @State private var selectedLedger: Ledger?
 
     // 时间维度选择
     @State private var selectedPeriod: TimePeriod = .week
@@ -48,13 +51,16 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // 账本选择器
+                    LedgerPickerView(selectedLedger: $selectedLedger, showAllOption: true)
+                        .padding(.top, 8)
+
                     // 时间维度和周期选择器
                     PeriodSelectorView(
                         selectedPeriod: $selectedPeriod,
                         selectedOption: $selectedOption,
                         periodOptions: periodOptions
                     )
-                    .padding(.top)
 
                     if let stats = statistics {
                         if stats.hasData {
@@ -111,6 +117,12 @@ struct StatisticsView: View {
         }
         .onChange(of: selectedPeriod) { oldValue, newValue in
             loadPeriodOptions()
+        }
+        .onChange(of: selectedLedger) { oldValue, newValue in
+            // 账本切换时重新计算统计
+            if selectedOption != nil {
+                calculateStatistics()
+            }
         }
         .onChange(of: selectedOption) { oldValue, newValue in
             if newValue != nil {
