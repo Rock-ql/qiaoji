@@ -19,6 +19,9 @@ struct ContentView: View {
     /// 是否显示添加交易界面
     @State private var showAddTransaction = false
 
+    /// 是否在交易详情页面（用于控制浮动按钮显示）
+    @State private var isShowingTransactionDetail = false
+
     /// 访问数据库上下文
     @Environment(\.modelContext) private var modelContext
 
@@ -27,7 +30,7 @@ struct ContentView: View {
             // 主TabView
             TabView(selection: $selectedTab) {
                 // 交易列表
-                TransactionListView()
+                TransactionListView(isShowingDetail: $isShowingTransactionDetail)
                     .tabItem {
                         Label("交易", systemImage: "list.bullet")
                     }
@@ -49,9 +52,9 @@ struct ContentView: View {
             }
             .accentColor(.blue)
 
-            // 浮动添加按钮（仅在交易标签页显示）
+            // 浮动添加按钮（仅在交易标签页且不在详情页时显示）
             // 作者: xiaolei
-            if selectedTab == 0 {
+            if selectedTab == 0 && !isShowingTransactionDetail {
                 FloatingAddButton {
                     showAddTransaction = true
                 }
@@ -175,6 +178,10 @@ struct TransactionListView: View {
 
     @State private var selectedLedger: Ledger?
 
+    /// 是否在显示详情页（用于控制浮动按钮）
+    /// 作者: xiaolei
+    @Binding var isShowingDetail: Bool
+
     /// 根据选中账本筛选的交易
     /// 作者: xiaolei
     private var transactions: [Transaction] {
@@ -275,6 +282,12 @@ struct TransactionListView: View {
             }
             .navigationDestination(for: Transaction.self) { transaction in
                 TransactionDetailView(transaction: transaction)
+                    .onAppear {
+                        isShowingDetail = true
+                    }
+                    .onDisappear {
+                        isShowingDetail = false
+                    }
             }
             .task {
                 // 初始化默认选中的账本（如果当前没有选中任何账本）
