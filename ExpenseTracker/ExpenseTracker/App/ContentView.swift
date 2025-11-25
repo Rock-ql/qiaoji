@@ -191,16 +191,23 @@ struct TransactionListView: View {
                                     Text(formatSectionDate(date))
                                     Spacer()
                                     HStack(spacing: 8) {
-                                        totalBadge(
-                                            title: "收入",
-                                            amount: dailyIncomeTotal(for: date),
-                                            isIncome: true
-                                        )
-                                        totalBadge(
-                                            title: "支出",
-                                            amount: dailyExpenseTotal(for: date),
-                                            isIncome: false
-                                        )
+                                        let incomeAmount = dailyIncomeTotal(for: date)
+                                        let expenseAmount = dailyExpenseTotal(for: date)
+
+                                        if incomeAmount > 0 {
+                                            totalBadge(
+                                                title: "收入",
+                                                amount: incomeAmount,
+                                                isIncome: true
+                                            )
+                                        }
+                                        if expenseAmount > 0 {
+                                            totalBadge(
+                                                title: "支出",
+                                                amount: expenseAmount,
+                                                isIncome: false
+                                            )
+                                        }
                                     }
                                 }
                             }
