@@ -172,7 +172,6 @@ struct TransactionListView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var selectedTransaction: Transaction?
-    @State private var showEditSheet = false
     @State private var selectedLedger: Ledger?
 
     /// 根据选中账本筛选的交易
@@ -218,7 +217,6 @@ struct TransactionListView: View {
                                     TransactionRow(transaction: transaction)
                                         .onTapGesture {
                                             selectedTransaction = transaction
-                                            showEditSheet = true
                                         }
                                 }
                                 .onDelete { indexSet in
@@ -275,10 +273,8 @@ struct TransactionListView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showEditSheet) {
-                if let transaction = selectedTransaction {
-                    EditTransactionView(transaction: transaction)
-                }
+            .sheet(item: $selectedTransaction) { transaction in
+                EditTransactionView(transaction: transaction)
             }
         }
     }

@@ -17,6 +17,7 @@ struct EditTransactionView: View {
     @State private var date = Date()
     @State private var note = ""
     @State private var showDeleteAlert = false
+    @State private var isLoading = true
 
     /// 是否显示自定义数字键盘
     /// 作者: xiaolei
@@ -35,6 +36,11 @@ struct EditTransactionView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             NavigationStack {
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
                 Form {
                 // 交易类型选择
                 Section {
@@ -104,7 +110,9 @@ struct EditTransactionView: View {
                         }
                     }
                 }
-            }
+                }
+                    }
+                }
             .navigationTitle("编辑交易")
             .navigationBarTitleDisplayMode(.inline)
             .background(
@@ -153,6 +161,9 @@ struct EditTransactionView: View {
                 selectedCategory = transaction.category
                 date = transaction.date
                 note = transaction.note
+
+                // 数据加载完成
+                isLoading = false
             }
             }
 
