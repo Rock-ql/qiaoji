@@ -46,45 +46,50 @@ struct TransactionDetailView: View {
     /// 作者: xiaolei
     @ViewBuilder
     private var amountCard: some View {
-        VStack(spacing: 12) {
-            // 分类图标
-            Image(systemName: transaction.categoryIcon)
-                .font(.system(size: 32))
-                .foregroundColor(.white)
-                .frame(width: 70, height: 70)
-                .background(
-                    Circle()
-                        .fill(Color(transaction.category?.color ?? "95A5A6"))
-                )
+        VStack(spacing: 16) {
+            // 上半部分：图标和分类
+            HStack(spacing: 12) {
+                // 分类图标
+                Image(systemName: transaction.categoryIcon)
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
+                    .frame(width: 50, height: 50)
+                    .background(
+                        Circle()
+                            .fill(Color(transaction.category?.color ?? "95A5A6"))
+                    )
 
-            // 分类名称
-            Text(transaction.categoryName)
-                .font(.title3)
-                .fontWeight(.semibold)
+                // 分类名称和类型
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(transaction.categoryName)
+                        .font(.headline)
+                        .foregroundColor(.primary)
 
-            // 金额
-            Text(transaction.type == .income ? "+\(transaction.formattedAmount)" : "-\(transaction.formattedAmount)")
-                .font(.system(size: 36, weight: .bold))
-                .foregroundColor(transaction.type == .income ? .green : .red)
+                    Text(transaction.type == .income ? "收入" : "支出")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
 
-            // 交易类型标签
-            Text(transaction.type == .income ? "收入" : "支出")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(transaction.type == .income ? Color.green : Color.red)
-                )
+                Spacer()
+            }
+
+            // 下半部分：金额
+            HStack {
+                Text(transaction.type == .income ? "+" : "-")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(transaction.type == .income ? .green : .red)
+                Text(transaction.formattedAmount)
+                    .font(.system(size: 40, weight: .bold))
+                    .foregroundColor(transaction.type == .income ? .green : .red)
+                Spacer()
+            }
         }
+        .padding(20)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         )
     }
 
@@ -147,43 +152,37 @@ struct TransactionDetailView: View {
             Button(action: {
                 showEditSheet = true
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "pencil")
+                        .font(.system(size: 16, weight: .semibold))
                     Text("编辑")
+                        .font(.system(size: 16, weight: .semibold))
                 }
-                .font(.headline)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 52)
                 .background(
-                    LinearGradient(
-                        colors: [.blue, .cyan],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.blue)
                 )
-                .cornerRadius(12)
             }
 
             // 删除按钮
             Button(role: .destructive, action: {
                 showDeleteAlert = true
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "trash")
+                        .font(.system(size: 16, weight: .semibold))
                     Text("删除")
+                        .font(.system(size: 16, weight: .semibold))
                 }
-                .font(.headline)
-                .foregroundColor(.red)
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 52)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.red, lineWidth: 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.red.opacity(0.1))
-                        )
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.red)
                 )
             }
         }
