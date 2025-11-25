@@ -13,7 +13,7 @@ import SwiftData
 /// 作者: xiaolei
 /// 存储单笔收入或支出记录
 @Model
-final class Transaction {
+final class Transaction: Hashable {
     /// 唯一标识符
     var id: UUID
 
@@ -83,6 +83,21 @@ final class Transaction {
         self.ledger = ledger
         self.createdAt = Date()
         self.updatedAt = Date()
+    }
+}
+
+// MARK: - Hashable 协议实现
+extension Transaction {
+    /// 哈希函数实现
+    /// 作者: xiaolei
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    /// 相等性比较
+    /// 作者: xiaolei
+    static func == (lhs: Transaction, rhs: Transaction) -> Bool {
+        lhs.id == rhs.id
     }
 }
 
