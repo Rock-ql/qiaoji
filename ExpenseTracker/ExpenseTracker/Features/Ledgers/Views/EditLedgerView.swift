@@ -51,22 +51,27 @@ struct EditLedgerView: View {
                 // 外观设置
                 Section("外观设置") {
                     // 图标选择
-                    Button(action: {
-                        showingIconPicker.toggle()
-                    }) {
-                        HStack {
-                            Text("图标")
-                                .foregroundColor(.primary)
-
-                            Spacer()
-
-                            Image(systemName: ledger.icon)
-                                .foregroundColor(Color(hex: ledger.color) ?? .blue)
-                                .frame(width: 30, height: 30)
-                                .background(
-                                    Circle()
-                                        .fill(Color(hex: ledger.color)?.opacity(0.2) ?? .blue.opacity(0.2))
-                                )
+                    HStack {
+                        Text("图标")
+                        Spacer()
+                        Image(systemName: ledger.icon)
+                            .foregroundColor(Color(hex: ledger.color) ?? .blue)
+                            .frame(width: 30, height: 30)
+                            .background(
+                                Circle()
+                                    .fill(Color(hex: ledger.color)?.opacity(0.2) ?? .blue.opacity(0.2))
+                            )
+                        Image(systemName: showingIconPicker ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation {
+                            showingIconPicker.toggle()
+                            if showingIconPicker {
+                                showingColorPicker = false
+                            }
                         }
                     }
 
@@ -75,37 +80,43 @@ struct EditLedgerView: View {
                             GridItem(.adaptive(minimum: 50))
                         ], spacing: 12) {
                             ForEach(icons, id: \.self) { iconName in
-                                Button(action: {
-                                    ledger.icon = iconName
-                                    showingIconPicker = false
-                                }) {
-                                    Image(systemName: iconName)
-                                        .font(.title2)
-                                        .foregroundColor(ledger.icon == iconName ? .white : .primary)
-                                        .frame(width: 50, height: 50)
-                                        .background(
-                                            Circle()
-                                                .fill(ledger.icon == iconName ? Color.blue : Color(.systemGray6))
-                                        )
-                                }
+                                Image(systemName: iconName)
+                                    .font(.title2)
+                                    .foregroundColor(ledger.icon == iconName ? .white : .primary)
+                                    .frame(width: 50, height: 50)
+                                    .background(
+                                        Circle()
+                                            .fill(ledger.icon == iconName ? (Color(hex: ledger.color) ?? .blue) : Color(.systemGray6))
+                                    )
+                                    .onTapGesture {
+                                        ledger.icon = iconName
+                                        withAnimation {
+                                            showingIconPicker = false
+                                        }
+                                    }
                             }
                         }
                         .padding(.vertical, 8)
                     }
 
                     // 颜色选择
-                    Button(action: {
-                        showingColorPicker.toggle()
-                    }) {
-                        HStack {
-                            Text("颜色")
-                                .foregroundColor(.primary)
-
-                            Spacer()
-
-                            Circle()
-                                .fill(Color(hex: ledger.color) ?? .blue)
-                                .frame(width: 30, height: 30)
+                    HStack {
+                        Text("颜色")
+                        Spacer()
+                        Circle()
+                            .fill(Color(hex: ledger.color) ?? .blue)
+                            .frame(width: 30, height: 30)
+                        Image(systemName: showingColorPicker ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation {
+                            showingColorPicker.toggle()
+                            if showingColorPicker {
+                                showingIconPicker = false
+                            }
                         }
                     }
 
@@ -114,18 +125,20 @@ struct EditLedgerView: View {
                             GridItem(.adaptive(minimum: 50))
                         ], spacing: 12) {
                             ForEach(colors, id: \.self) { colorHex in
-                                Button(action: {
-                                    ledger.color = colorHex
-                                    showingColorPicker = false
-                                }) {
-                                    Circle()
-                                        .fill(Color(hex: colorHex) ?? .gray)
-                                        .frame(width: 50, height: 50)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: ledger.color == colorHex ? 3 : 0)
-                                        )
-                                }
+                                Circle()
+                                    .fill(Color(hex: colorHex) ?? .gray)
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(ledger.color == colorHex ? Color.primary : Color.clear, lineWidth: 3)
+                                    )
+                                    .scaleEffect(ledger.color == colorHex ? 1.1 : 1.0)
+                                    .onTapGesture {
+                                        ledger.color = colorHex
+                                        withAnimation {
+                                            showingColorPicker = false
+                                        }
+                                    }
                             }
                         }
                         .padding(.vertical, 8)

@@ -53,22 +53,27 @@ struct AddLedgerView: View {
                 // 外观设置
                 Section("外观设置") {
                     // 图标选择
-                    Button(action: {
-                        showingIconPicker.toggle()
-                    }) {
-                        HStack {
-                            Text("图标")
-                                .foregroundColor(.primary)
-
-                            Spacer()
-
-                            Image(systemName: icon)
-                                .foregroundColor(Color(hex: color) ?? .blue)
-                                .frame(width: 30, height: 30)
-                                .background(
-                                    Circle()
-                                        .fill(Color(hex: color)?.opacity(0.2) ?? .blue.opacity(0.2))
-                                )
+                    HStack {
+                        Text("图标")
+                        Spacer()
+                        Image(systemName: icon)
+                            .foregroundColor(Color(hex: color) ?? .blue)
+                            .frame(width: 30, height: 30)
+                            .background(
+                                Circle()
+                                    .fill(Color(hex: color)?.opacity(0.2) ?? .blue.opacity(0.2))
+                            )
+                        Image(systemName: showingIconPicker ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation {
+                            showingIconPicker.toggle()
+                            if showingIconPicker {
+                                showingColorPicker = false
+                            }
                         }
                     }
 
@@ -77,37 +82,43 @@ struct AddLedgerView: View {
                             GridItem(.adaptive(minimum: 50))
                         ], spacing: 12) {
                             ForEach(icons, id: \.self) { iconName in
-                                Button(action: {
-                                    icon = iconName
-                                    showingIconPicker = false
-                                }) {
-                                    Image(systemName: iconName)
-                                        .font(.title2)
-                                        .foregroundColor(icon == iconName ? .white : .primary)
-                                        .frame(width: 50, height: 50)
-                                        .background(
-                                            Circle()
-                                                .fill(icon == iconName ? Color.blue : Color(.systemGray6))
-                                        )
-                                }
+                                Image(systemName: iconName)
+                                    .font(.title2)
+                                    .foregroundColor(icon == iconName ? .white : .primary)
+                                    .frame(width: 50, height: 50)
+                                    .background(
+                                        Circle()
+                                            .fill(icon == iconName ? (Color(hex: color) ?? .blue) : Color(.systemGray6))
+                                    )
+                                    .onTapGesture {
+                                        icon = iconName
+                                        withAnimation {
+                                            showingIconPicker = false
+                                        }
+                                    }
                             }
                         }
                         .padding(.vertical, 8)
                     }
 
                     // 颜色选择
-                    Button(action: {
-                        showingColorPicker.toggle()
-                    }) {
-                        HStack {
-                            Text("颜色")
-                                .foregroundColor(.primary)
-
-                            Spacer()
-
-                            Circle()
-                                .fill(Color(hex: color) ?? .blue)
-                                .frame(width: 30, height: 30)
+                    HStack {
+                        Text("颜色")
+                        Spacer()
+                        Circle()
+                            .fill(Color(hex: color) ?? .blue)
+                            .frame(width: 30, height: 30)
+                        Image(systemName: showingColorPicker ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation {
+                            showingColorPicker.toggle()
+                            if showingColorPicker {
+                                showingIconPicker = false
+                            }
                         }
                     }
 
@@ -116,18 +127,20 @@ struct AddLedgerView: View {
                             GridItem(.adaptive(minimum: 50))
                         ], spacing: 12) {
                             ForEach(colors, id: \.self) { colorHex in
-                                Button(action: {
-                                    color = colorHex
-                                    showingColorPicker = false
-                                }) {
-                                    Circle()
-                                        .fill(Color(hex: colorHex) ?? .gray)
-                                        .frame(width: 50, height: 50)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: color == colorHex ? 3 : 0)
-                                        )
-                                }
+                                Circle()
+                                    .fill(Color(hex: colorHex) ?? .gray)
+                                    .frame(width: 50, height: 50)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(color == colorHex ? Color.primary : Color.clear, lineWidth: 3)
+                                    )
+                                    .scaleEffect(color == colorHex ? 1.1 : 1.0)
+                                    .onTapGesture {
+                                        color = colorHex
+                                        withAnimation {
+                                            showingColorPicker = false
+                                        }
+                                    }
                             }
                         }
                         .padding(.vertical, 8)
