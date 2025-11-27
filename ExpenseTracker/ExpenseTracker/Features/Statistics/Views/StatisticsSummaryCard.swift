@@ -97,7 +97,6 @@ struct StatisticsSummaryCard: View {
                 }
             }
         }
-        .frame(height: 220)
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
         .background(Color(.systemBackground))

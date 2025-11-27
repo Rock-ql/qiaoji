@@ -151,8 +151,7 @@ struct TrendChartView: View {
                 }
             }
         }
-        .frame(height: 220)
-        .padding(.vertical, 16)
+        .padding(.vertical, 12)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
