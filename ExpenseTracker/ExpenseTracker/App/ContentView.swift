@@ -9,6 +9,14 @@
 import SwiftUI
 import SwiftData
 
+/// 添加交易的触发项
+/// 作者: xiaolei
+/// 用于 sheet(item:) 模式，确保每次打开时获取最新的账本
+struct AddTransactionItem: Identifiable {
+    let id = UUID()
+    let ledger: Ledger?
+}
+
 /// 应用主视图
 /// 作者: xiaolei
 /// 使用TabView实现底部导航，包含：交易、统计、设置三个模块
@@ -16,11 +24,14 @@ struct ContentView: View {
     /// 当前选中的Tab
     @State private var selectedTab = 0
 
-    /// 是否显示添加交易界面
-    @State private var showAddTransaction = false
-
     /// 是否在交易详情页面（用于控制浮动按钮显示）
     @State private var isShowingTransactionDetail = false
+
+    /// 当前选中的账本
+    @State private var selectedLedger: Ledger?
+
+    /// 添加交易的触发项（使用 item 模式确保获取最新账本）
+    @State private var addTransactionItem: AddTransactionItem?
 
     /// 访问数据库上下文
     @Environment(\.modelContext) private var modelContext
@@ -30,7 +41,7 @@ struct ContentView: View {
             // 主TabView
             TabView(selection: $selectedTab) {
                 // 交易列表
-                TransactionListView(isShowingDetail: $isShowingTransactionDetail)
+                TransactionListView(isShowingDetail: $isShowingTransactionDetail, selectedLedger: $selectedLedger)
                     .tabItem {
                         Label("交易", systemImage: "list.bullet")
                     }
@@ -56,13 +67,14 @@ struct ContentView: View {
             // 作者: xiaolei
             if selectedTab == 0 && !isShowingTransactionDetail {
                 FloatingAddButton {
-                    showAddTransaction = true
+                    // 使用 item 模式触发 sheet，确保每次都获取最新的账本
+                    addTransactionItem = AddTransactionItem(ledger: selectedLedger)
                 }
                 .padding(.bottom, 60) // 留出TabBar的空间
             }
         }
-        .sheet(isPresented: $showAddTransaction) {
-            AddTransactionView()
+        .sheet(item: $addTransactionItem) { item in
+            AddTransactionView(defaultLedger: item.ledger)
         }
         .task {
             // 首次启动时初始化默认分类
@@ -176,11 +188,13 @@ struct TransactionListView: View {
     var ledgers: [Ledger]
     @Environment(\.modelContext) private var modelContext
 
-    @State private var selectedLedger: Ledger?
-
     /// 是否在显示详情页（用于控制浮动按钮）
     /// 作者: xiaolei
     @Binding var isShowingDetail: Bool
+
+    /// 当前选中的账本（直接使用外部 Binding，避免同步延迟）
+    /// 作者: xiaolei
+    @Binding var selectedLedger: Ledger?
 
     /// 根据选中账本筛选的交易
     /// 作者: xiaolei
@@ -529,6 +543,10 @@ struct AddTransactionView: View {
     @Query(filter: #Predicate<Ledger> { !$0.isArchived }, sort: \Ledger.sortOrder)
     var ledgers: [Ledger]
 
+    /// 外部传入的默认账本（来自交易列表当前选中的账本）
+    /// 作者: xiaolei
+    var defaultLedger: Ledger?
+
     @State private var amount: String = ""
     @State private var type: TransactionType = .expense
     @State private var selectedCategory: Category?
@@ -644,9 +662,13 @@ struct AddTransactionView: View {
             }
             .navigationTitle("添加交易")
             .task {
-                // 初始化默认账本
+                // 初始化账本：优先使用外部传入的账本，否则使用默认账本
                 if selectedLedger == nil {
-                    selectedLedger = ledgers.first(where: { $0.isDefault }) ?? ledgers.first
+                    if let passedLedger = defaultLedger {
+                        selectedLedger = passedLedger
+                    } else {
+                        selectedLedger = ledgers.first(where: { $0.isDefault }) ?? ledgers.first
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
