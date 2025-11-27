@@ -300,6 +300,7 @@ struct EditTransactionView: View {
 struct CategoryChip: View {
     let category: Category
     let isSelected: Bool
+    var isHighlighted: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -317,10 +318,12 @@ struct CategoryChip: View {
                         Circle()
                             .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 3)
                     )
+                    .scaleEffect(isHighlighted ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isHighlighted)
 
                 Text(category.name)
                     .font(.caption)
-                    .foregroundColor(.primary)
+                    .foregroundColor(isHighlighted ? .red : .primary)
                     .lineLimit(1)
             }
             .frame(width: 60)

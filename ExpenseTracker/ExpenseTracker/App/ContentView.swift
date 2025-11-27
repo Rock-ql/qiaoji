@@ -556,97 +556,25 @@ struct AddTransactionView: View {
 
     /// 当前输入模式
     /// 作者: xiaolei
-    @State private var inputMode: InputMode = .amount
+    @State private var inputMode: InputMode = .none
+
+    /// 分类网格列配置（两行显示）
+    /// 作者: xiaolei
+    private let categoryColumns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
+    ]
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // 主内容区域（可滚动）
+                // 主内容区域
                 ScrollView {
-                    VStack(spacing: 16) {
-                        // 交易类型选择
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("类型")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 4)
-
-                            Picker("类型", selection: $type) {
-                                Text("支出").tag(TransactionType.expense)
-                                Text("收入").tag(TransactionType.income)
-                            }
-                            .pickerStyle(.segmented)
-                        }
-                        .padding(.horizontal)
-
-                        // 金额显示卡片
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("金额")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 4)
-
-                            HStack {
-                                Text("¥")
-                                    .font(.system(size: 28, weight: .light))
-                                    .foregroundColor(.secondary)
-
-                                Text(amount.isEmpty ? "0.00" : amount)
-                                    .font(.system(size: 32, weight: .semibold, design: .rounded))
-                                    .foregroundColor(amount.isEmpty ? .secondary : (type == .expense ? .red : .green))
-                                    .contentTransition(.numericText())
-
-                                Spacer()
-
-                                // 输入模式指示器
-                                if inputMode == .amount {
-                                    Image(systemName: "keyboard")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.blue)
-                                        .padding(6)
-                                        .background(Color.blue.opacity(0.1))
-                                        .clipShape(Circle())
-                                }
-                            }
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(.systemGray6))
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    inputMode = .amount
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-
-                        // 分类选择
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("分类")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 4)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(filteredCategories) { category in
-                                        CategoryChip(
-                                            category: category,
-                                            isSelected: selectedCategory?.id == category.id
-                                        ) {
-                                            selectedCategory = category
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 4)
-                            }
-                        }
-                        .padding(.horizontal)
-
-                        // 账本选择
-                        VStack(alignment: .leading, spacing: 8) {
+                    VStack(spacing: 20) {
+                        // 1. 账本选择
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("账本")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
@@ -660,14 +588,14 @@ struct AddTransactionView: View {
                                         }) {
                                             HStack(spacing: 6) {
                                                 Image(systemName: ledger.icon)
-                                                    .font(.caption)
+                                                    .font(.subheadline)
                                                 Text(ledger.name)
                                                     .font(.subheadline)
                                             }
                                             .fontWeight(selectedLedger?.id == ledger.id ? .semibold : .regular)
                                             .foregroundColor(selectedLedger?.id == ledger.id ? .white : .primary)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
                                             .background(
                                                 Capsule()
                                                     .fill(selectedLedger?.id == ledger.id ? Color(hex: ledger.color) ?? Color.blue : Color(.systemGray6))
@@ -676,41 +604,85 @@ struct AddTransactionView: View {
                                         .buttonStyle(.plain)
                                     }
                                 }
-                                .padding(.horizontal, 4)
                             }
                         }
                         .padding(.horizontal)
+
+                        // 2. 交易类型选择
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("类型")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+
+                            Picker("类型", selection: $type) {
+                                Text("支出").tag(TransactionType.expense)
+                                Text("收入").tag(TransactionType.income)
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        .padding(.horizontal)
+
+                        // 3. 分类选择（网格两行显示）
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("分类")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+
+                                Spacer()
+
+                                if selectedCategory == nil {
+                                    Text("请选择")
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                            .padding(.horizontal, 4)
+
+                            LazyVGrid(columns: categoryColumns, spacing: 12) {
+                                ForEach(filteredCategories) { category in
+                                    CategoryChip(
+                                        category: category,
+                                        isSelected: selectedCategory?.id == category.id
+                                    ) {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            selectedCategory = category
+                                            // 选择分类后显示数字键盘
+                                            inputMode = .amount
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+
+                        // 4. 金额和备注预览区域（键盘收起后显示）
+                        if selectedCategory != nil && inputMode == .none {
+                            transactionPreviewSection
+                        }
                     }
                     .padding(.vertical)
                 }
-                .scrollDismissesKeyboard(.interactively)
-                .onTapGesture {
-                    // 点击空白区域时，如果在备注模式则切回金额模式
-                    if inputMode == .note {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            inputMode = .amount
-                        }
-                    }
-                }
 
-                // 底部输入面板
-                CustomNumericKeyboard(
-                    amount: $amount,
-                    date: $date,
-                    note: $note,
-                    inputMode: $inputMode,
-                    onDone: {
-                        // 点击完成时尝试保存交易
-                        if canSave {
-                            saveTransaction()
-                        } else {
-                            // 未满足保存条件时给出反馈
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.warning)
+                // 底部输入面板（选择分类后且在输入模式时显示）
+                if selectedCategory != nil && (inputMode == .amount || inputMode == .note) {
+                    CustomNumericKeyboard(
+                        amount: $amount,
+                        date: $date,
+                        note: $note,
+                        inputMode: $inputMode,
+                        onDone: {
+                            // 点击对勾收起键盘，显示预览
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                inputMode = .none
+                            }
                         }
-                    }
-                )
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: inputMode)
             .navigationTitle("添加交易")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -722,7 +694,7 @@ struct AddTransactionView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
-                        saveTransaction()
+                        tryToSave()
                     }
                     .disabled(!canSave)
                 }
@@ -749,7 +721,128 @@ struct AddTransactionView: View {
                 }
             }
         }
-        .interactiveDismissDisabled(inputMode == .note) // 备注输入时禁止下滑关闭
+        .interactiveDismissDisabled(inputMode == .note)
+    }
+
+    /// 交易预览区域（显示已填写的金额、日期、备注）
+    /// 作者: xiaolei
+    @ViewBuilder
+    private var transactionPreviewSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("交易信息")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                // 金额行
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        inputMode = .amount
+                    }
+                } label: {
+                    HStack {
+                        Label("金额", systemImage: "yensign.circle")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(amount.isEmpty ? "0.00" : "¥\(amount)")
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .foregroundColor(amount.isEmpty ? .secondary : (type == .expense ? .red : .green))
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .padding(.leading, 16)
+
+                // 日期行
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        inputMode = .amount
+                    }
+                } label: {
+                    HStack {
+                        Label("日期", systemImage: "calendar")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(formatDate(date))
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+                    .padding(.leading, 16)
+
+                // 备注行
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        inputMode = .note
+                    }
+                } label: {
+                    HStack {
+                        Label("备注", systemImage: "note.text")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(note.isEmpty ? "无" : note)
+                            .font(.subheadline)
+                            .foregroundColor(note.isEmpty ? .secondary : .primary)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                }
+                .buttonStyle(.plain)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .padding(.horizontal)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    /// 格式化日期显示
+    /// 作者: xiaolei
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            formatter.dateFormat = "今天 HH:mm"
+        } else if calendar.isDateInYesterday(date) {
+            formatter.dateFormat = "昨天 HH:mm"
+        } else {
+            formatter.dateFormat = "M月d日 HH:mm"
+        }
+        return formatter.string(from: date)
+    }
+
+    /// 尝试保存交易
+    /// 作者: xiaolei
+    private func tryToSave() {
+        guard canSave else {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.warning)
+            return
+        }
+        saveTransaction()
     }
 
     /// 筛选后的分类（根据交易类型）
