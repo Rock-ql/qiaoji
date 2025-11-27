@@ -14,59 +14,111 @@ import SwiftUI
 struct LedgerCardView: View {
     let ledger: Ledger
 
+    /// 账本主题色
+    private var themeColor: Color {
+        Color(hex: ledger.color) ?? .blue
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             // 顶部：图标和名称
-            HStack {
+            HStack(spacing: 10) {
                 Image(systemName: ledger.icon)
-                    .font(.title2)
-                    .foregroundColor(Color(ledger.color))
-                    .frame(width: 40, height: 40)
+                    .font(.title3)
+                    .foregroundColor(themeColor)
+                    .frame(width: 36, height: 36)
                     .background(
                         Circle()
-                            .fill(Color(ledger.color).opacity(0.2))
+                            .fill(themeColor.opacity(0.15))
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ledger.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    HStack(spacing: 4) {
+                        Text(ledger.name)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
 
-                    if ledger.isDefault {
-                        Text("默认")
-                            .font(.caption2)
-                            .foregroundColor(.blue)
+                        if ledger.isDefault {
+                            Text("默认")
+                                .font(.system(size: 9))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.blue))
+                        }
                     }
+
+                    Text("\(ledger.transactionCount)笔交易")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
 
                 Spacer()
             }
 
-            // 统计信息
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("收支")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text(ledger.formattedBalance)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(ledger.balance >= 0 ? .green : .red)
-                }
+            Divider()
 
-                HStack {
-                    Text("笔数")
+            // 统计信息
+            HStack(spacing: 0) {
+                // 收入
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("收入")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(formatAmount(ledger.totalIncome))
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("\(ledger.transactionCount)笔")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .fontWeight(.medium)
+                        .foregroundColor(.green)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // 支出
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("支出")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(formatAmount(ledger.totalExpense))
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.red)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            // 结余
+            HStack {
+                Text("结余")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(formatAmount(ledger.balance))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(ledger.balance >= 0 ? .green : .red)
             }
         }
-        .padding()
-        .glassmorphism()
+        .padding(12)
+        .frame(height: 150) // 固定高度确保卡片大小一致
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+    }
+
+    /// 格式化金额（简洁显示）
+    /// 作者: xiaolei
+    private func formatAmount(_ amount: Double) -> String {
+        if amount >= 10000 {
+            return String(format: "¥%.1fw", amount / 10000)
+        } else if amount >= 1000 {
+            return String(format: "¥%.0f", amount)
+        } else {
+            return String(format: "¥%.2f", amount)
+        }
     }
 }

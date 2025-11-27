@@ -27,56 +27,61 @@ struct LedgerListView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if ledgers.isEmpty {
-                    // 空状态
-                    emptyStateView
-                } else {
-                    // 账本网格列表
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 16) {
-                            ForEach(ledgers) { ledger in
-                                NavigationLink(value: ledger) {
-                                    LedgerCardView(ledger: ledger)
-                                }
-                                .buttonStyle(.plain)
+        ZStack {
+            if ledgers.isEmpty {
+                // 空状态
+                emptyStateView
+            } else {
+                // 账本网格列表
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(ledgers) { ledger in
+                            Button {
+                                selectedLedger = ledger
+                            } label: {
+                                LedgerCardView(ledger: ledger)
                             }
+                            .buttonStyle(.plain)
                         }
-                        .padding()
                     }
-                }
-
-                // 浮动添加按钮
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showingAddLedger = true
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 60, height: 60)
-                                .background(
-                                    Circle()
-                                        .fill(Color.blue)
-                                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                                )
-                        }
-                        .padding()
-                    }
+                    .padding()
                 }
             }
-            .navigationTitle("账本管理")
-            .navigationDestination(for: Ledger.self) { ledger in
+
+            // 浮动添加按钮
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showingAddLedger = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(
+                                Circle()
+                                    .fill(Color.blue)
+                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                            )
+                    }
+                    .padding()
+                }
+            }
+        }
+        .navigationTitle("账本管理")
+        .navigationDestination(isPresented: Binding(
+            get: { selectedLedger != nil },
+            set: { if !$0 { selectedLedger = nil } }
+        )) {
+            if let ledger = selectedLedger {
                 LedgerDetailView(ledger: ledger)
             }
-            .sheet(isPresented: $showingAddLedger) {
-                AddLedgerView()
-            }
+        }
+        .sheet(isPresented: $showingAddLedger) {
+            AddLedgerView()
         }
     }
 
