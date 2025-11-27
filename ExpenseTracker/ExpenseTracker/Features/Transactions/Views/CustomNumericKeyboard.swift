@@ -8,6 +8,14 @@
 
 import SwiftUI
 
+/// 输入模式枚举
+/// 作者: xiaolei
+enum InputMode: Equatable {
+    case amount    // 金额输入模式（显示数字键盘）
+    case note      // 备注输入模式（显示系统键盘）
+    case none      // 无输入模式
+}
+
 /// 自定义数字键盘
 /// 作者: xiaolei
 /// 提供数字输入、小数点、加减运算和删除等功能
@@ -20,6 +28,9 @@ struct CustomNumericKeyboard: View {
 
     /// 备注
     @Binding var note: String
+
+    /// 当前输入模式
+    @Binding var inputMode: InputMode
 
     /// 累计金额（用于多笔金额计算）
     @State private var accumulatedAmount: Double = 0.0
@@ -41,8 +52,8 @@ struct CustomNumericKeyboard: View {
     /// 作者: xiaolei
     @State private var showDatePicker = false
 
-    /// 按键点击回调
-    var onDismiss: (() -> Void)?
+    /// 完成回调
+    var onDone: (() -> Void)?
 
     /// 操作类型枚举
     /// 作者: xiaolei
@@ -81,96 +92,132 @@ struct CustomNumericKeyboard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部信息区域
-            VStack(spacing: 8) {
-                // 备注输入区域
-                HStack {
-                    Image(systemName: "note.text")
-                        .foregroundColor(.orange)
-                    TextField("备注（可选）", text: $note)
-                        .textFieldStyle(.plain)
-                        .focused($isNoteFocused)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            }
-            .background(Color(.systemGray6))
+            // 拖动指示器
+            Capsule()
+                .fill(Color(.systemGray4))
+                .frame(width: 36, height: 4)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
-            Divider()
+            // 备注输入区域
+            HStack(spacing: 12) {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 16))
+                    .foregroundColor(inputMode == .note ? .blue : .secondary)
 
-            // 当前输入显示区域
-            VStack(spacing: 0) {
-                // 金额显示和日期按钮在同一行
-                HStack(alignment: .center, spacing: 12) {
-                    Text("¥")
-                        .font(.system(size: 36, weight: .regular))
-                        .foregroundColor(.secondary)
-
-                    Text(currentInput.isEmpty ? "0" : currentInput)
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-
-                    Spacer()
-
-                    Button(action: {
-                        showDatePicker = true
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar")
-                                .font(.caption)
-                            Text(formatDateForButton(date))
-                                .font(.caption)
+                TextField("添加备注", text: $note)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline)
+                    .focused($isNoteFocused)
+                    .onTapGesture {
+                        // 点击备注区域切换到备注输入模式
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            inputMode = .note
                         }
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(12)
+                    }
+
+                if !note.isEmpty {
+                    Button(action: {
+                        note = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
             }
-            .background(Color(.systemBackground))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.systemGray6))
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+            // 金额显示区域
+            HStack(alignment: .center, spacing: 8) {
+                Text("¥")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundColor(.secondary)
+
+                Text(currentInput.isEmpty ? "0" : currentInput)
+                    .font(.system(size: 44, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .contentTransition(.numericText())
+
+                Spacer()
+
+                // 日期选择按钮
+                Button(action: {
+                    showDatePicker = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 12))
+                        Text(formatDateForButton(date))
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.blue.opacity(0.1))
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // 点击金额区域切换到金额输入模式
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isNoteFocused = false
+                    inputMode = .amount
+                }
+            }
 
             // 累计金额提示栏
             if showAccumulatedHint {
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: lastOperation == .add ? "plus.circle.fill" : "minus.circle.fill")
                         .foregroundColor(lastOperation == .add ? .green : .orange)
+                        .font(.system(size: 14))
 
-                    Text("累计:")
-                        .font(.caption)
+                    Text("累计")
+                        .font(.system(size: 13))
                         .foregroundColor(.secondary)
 
                     Text(formatCurrency(realTimeAccumulatedAmount))
-                        .font(.caption)
-                        .fontWeight(.semibold)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.primary)
 
                     Spacer()
 
                     Button(action: {
-                        withAnimation {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             resetAccumulation()
                         }
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
+                            .font(.system(size: 16))
+                            .foregroundColor(Color(.systemGray3))
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.vertical, 10)
                 .background(Color(.systemGray6))
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.asymmetric(
+                    insertion: .push(from: .top).combined(with: .opacity),
+                    removal: .push(from: .bottom).combined(with: .opacity)
+                ))
             }
 
-            Divider()
-
-            // 键盘按键网格（仅在不编辑备注时显示）
-            if !isNoteFocused {
+            // 数字键盘（仅在金额输入模式显示）
+            if inputMode == .amount {
                 VStack(spacing: 1) {
                     ForEach(0..<keyboardLayout.count, id: \.self) { rowIndex in
                         HStack(spacing: 1) {
@@ -183,12 +230,16 @@ struct CustomNumericKeyboard: View {
                         }
                     }
                 }
-                .background(Color(.systemGray5))
+                .background(Color(.systemGray4))
+                .transition(.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .move(edge: .bottom).combined(with: .opacity)
+                ))
             }
         }
-        .frame(height: dynamicHeight)
-        .background(Color(.systemGray6))
-        .animation(.easeInOut(duration: 0.3), value: isNoteFocused)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
         .sheet(isPresented: $showDatePicker) {
             DatePickerSheet(date: $date)
         }
@@ -198,17 +249,21 @@ struct CustomNumericKeyboard: View {
                 currentInput = amount
             }
         }
-    }
-
-    /// 动态计算键盘高度
-    /// 作者: xiaolei
-    private var dynamicHeight: CGFloat {
-        if isNoteFocused {
-            // 编辑备注时：备注区域(约44) + 金额显示(约100) + 累计提示(可选40)
-            return showAccumulatedHint ? 184 : 144
-        } else {
-            // 显示数字键盘时：备注(约44) + 金额(约100) + 累计(可选40) + 键盘(约220)
-            return showAccumulatedHint ? 404 : 364
+        .onChange(of: isNoteFocused) { _, focused in
+            // 同步焦点状态和输入模式
+            if focused {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    inputMode = .note
+                }
+            }
+        }
+        .onChange(of: inputMode) { _, newMode in
+            // 输入模式变化时同步焦点
+            if newMode == .note {
+                isNoteFocused = true
+            } else if newMode == .amount {
+                isNoteFocused = false
+            }
         }
     }
 
@@ -300,7 +355,7 @@ struct CustomNumericKeyboard: View {
                 }
                 lastOperation = .add
                 currentInput = "" // 清空输入，让用户继续输入下一个数字
-                withAnimation {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showAccumulatedHint = true
                 }
             }
@@ -317,7 +372,7 @@ struct CustomNumericKeyboard: View {
                 }
                 lastOperation = .subtract
                 currentInput = "" // 清空输入，让用户继续输入下一个数字
-                withAnimation {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showAccumulatedHint = true
                 }
             }
@@ -332,7 +387,7 @@ struct CustomNumericKeyboard: View {
                     amount = currentInput
                 }
             }
-            onDismiss?()
+            onDone?()
         }
     }
 
@@ -390,20 +445,26 @@ struct KeyButton: View {
     let key: KeyboardKey
     let action: () -> Void
 
+    @State private var isPressed = false
+
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            // 触感反馈
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            action()
+        }) {
             ZStack {
                 // 按钮背景
                 Rectangle()
-                    .fill(backgroundColor)
+                    .fill(isPressed ? pressedColor : backgroundColor)
 
                 // 按钮内容
                 Group {
                     switch key {
                     case .number(let digit):
                         Text(digit)
-                            .font(.title2)
-                            .fontWeight(.regular)
+                            .font(.system(size: 24, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
 
                     case .action(let actionType):
@@ -412,8 +473,9 @@ struct KeyButton: View {
                 }
             }
         }
+        .buttonStyle(KeyButtonStyle(isPressed: $isPressed))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(height: 55)
+        .frame(height: 52)
     }
 
     /// 按键背景颜色
@@ -427,7 +489,24 @@ struct KeyButton: View {
             case .done:
                 return Color.blue
             case .add, .subtract:
-                return Color.orange.opacity(0.15)
+                return Color.orange.opacity(0.12)
+            case .delete:
+                return Color(.systemGray5)
+            }
+        }
+    }
+
+    /// 按键按下时的颜色
+    private var pressedColor: Color {
+        switch key {
+        case .number:
+            return Color(.systemGray4)
+        case .action(let actionType):
+            switch actionType {
+            case .done:
+                return Color.blue.opacity(0.8)
+            case .add, .subtract:
+                return Color.orange.opacity(0.25)
             case .delete:
                 return Color(.systemGray4)
             }
@@ -443,27 +522,39 @@ struct KeyButton: View {
         switch action {
         case .delete:
             Image(systemName: "delete.left")
-                .font(.title3)
+                .font(.system(size: 20))
                 .foregroundColor(.primary)
 
         case .add:
             Image(systemName: "plus")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.orange)
 
         case .subtract:
             Image(systemName: "minus")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.orange)
 
         case .done:
             Image(systemName: "checkmark")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
         }
+    }
+}
+
+/// 按键按钮样式
+/// 作者: xiaolei
+struct KeyButtonStyle: ButtonStyle {
+    @Binding var isPressed: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                isPressed = pressed
+            }
     }
 }
 
@@ -513,7 +604,8 @@ struct DatePickerSheet: View {
         CustomNumericKeyboard(
             amount: .constant("123.45"),
             date: .constant(Date()),
-            note: .constant("")
+            note: .constant(""),
+            inputMode: .constant(.amount)
         )
     }
 }
